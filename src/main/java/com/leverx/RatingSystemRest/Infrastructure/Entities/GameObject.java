@@ -1,5 +1,6 @@
 package com.leverx.RatingSystemRest.Infrastructure.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,8 @@ public class GameObject {
 
     public String text;
 
+    public double price ;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime created_at;
@@ -40,6 +43,7 @@ public class GameObject {
     //relationships
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "user_id")
     private User user;
 
