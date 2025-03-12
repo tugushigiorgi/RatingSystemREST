@@ -1,6 +1,5 @@
 package com.leverx.RatingSystemRest.Presentation.Dto;
 
-
 import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,15 +8,17 @@ import org.springframework.web.multipart.MultipartFile;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class addGameObjectDto {
+public class addCommentDto {
 
-    public String title;
 
-    public String text;
+    public int  review;
 
-    public double price ;
+    public int sellerId;
 
- //   public  MultipartFile photo;
+    public String comment;
+
+    public int anonymousId;
+
 
 
 

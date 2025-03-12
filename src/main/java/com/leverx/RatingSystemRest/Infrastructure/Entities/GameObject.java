@@ -2,10 +2,7 @@ package com.leverx.RatingSystemRest.Infrastructure.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -14,11 +11,10 @@ import java.time.LocalDateTime;
 @Entity
 @Builder
 @NoArgsConstructor
+
 @AllArgsConstructor
 @Data
 public class GameObject {
-
-
 
 
     @Id
@@ -29,27 +25,25 @@ public class GameObject {
 
     public String text;
 
-    public double price ;
+    public double price;
 
-    @CreatedDate
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime created_at;
 
-    @LastModifiedDate
 
     @Column(insertable = false)
     private LocalDateTime updated_at;
 
     //relationships
-
-    @ManyToOne
     @JsonIgnore
+    @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
+
     @OneToOne(mappedBy = "gameObject", cascade = CascadeType.ALL, orphanRemoval = true)
     private GameObjectPicture picture;
-
 
 
 }

@@ -2,7 +2,9 @@ package com.leverx.RatingSystemRest.Business.Service;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObjectPicture;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectPictureRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UpdateGameObject;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,41 +27,48 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @Data
 @Service
 public class GameObjectService {
+    private final UserPhotoRepository userPhotoRepository;
     private GameObjectRepository gameObjectRepository;
     private UserRepository userRepository;
     private GameObjectPictureRepository gameObjectPictureRepository;
+    private UserPhotoRepository UserPhotoRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository) {
+    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository) {
         this.gameObjectRepository = gameObjectRepository;
         this.userRepository = userRepository;
+        this.userPhotoRepository = userPhotoRepository;
     }
 
-    public ResponseEntity<String> add(addGameObjectDto dto, int userId) {
+    public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo,int userId) {
         var getcurrentUser = userRepository.findById(userId);
         if (getcurrentUser.isPresent()) {
             var currentUser = getcurrentUser.get();
             String userEmail = currentUser.getEmail();
-            var savepicture = saveNewPictureOnLocalFolder(userEmail, dto.getPicture());
+            var savepicture = saveNewPictureOnLocalFolder(userEmail, photo);
             if (savepicture != null) {
                 var gameObject = GameObject.builder()
                         .price(dto.getPrice())
                         .title(dto.getTitle())
                         .text(dto.getText())
                         .user(currentUser)
+                        .created_at(LocalDateTime.now())
                         .picture(savepicture).build();
 
                 savepicture.setGameObject(gameObject);
 
                 gameObjectRepository.save(gameObject);
-                gameObjectPictureRepository.save(savepicture);
+
                 return new ResponseEntity<>("new object added succesfully", HttpStatus.OK);
 
             }
@@ -172,12 +181,14 @@ public class GameObjectService {
 
     private GameObjectPicture saveNewPictureOnLocalFolder(String userEmail, MultipartFile picture) {
         String userFolderPath = uploadDir + File.separator + userEmail + File.separator + "profile";
+
+       System.out.println(userFolderPath);
         File userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
             userFolder.mkdirs();
         }
         UUID uuid = UUID.randomUUID();
-        String filePath = userFolderPath + File.separator + picture.getOriginalFilename() + uuid;
+        String filePath = userFolderPath + File.separator + uuid+picture.getOriginalFilename() ;
         try {
 
             File savedFile = new File(filePath);
@@ -195,6 +206,33 @@ public class GameObjectService {
         }
         return null;
     }
+
+
+    public List<GameObjectDto> getGameObjectsBySellerId(int sellerId) throws Exception {
+
+        var getUser = userRepository.findById(sellerId);
+        if (getUser.isEmpty()) {
+
+            throw new Exception("User not found");
+        }
+        var currentUser = getUser.get();
+
+        var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
+
+        return getGames.stream().map(game -> GameObjectDto.toDto(game,currentUser.getPhoto().getUrl(),sellerId,currentUser.fullName())).toList();
+
+
+
+
+
+    }
+
+
+
+
+
+
+
 
 
 }

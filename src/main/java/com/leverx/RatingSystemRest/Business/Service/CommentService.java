@@ -1,8 +1,20 @@
 package com.leverx.RatingSystemRest.Business.Service;
 
+import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.UserRoleEnum;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentUpdateDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserReviewsDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.addCommentDto;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @AllArgsConstructor
@@ -10,11 +22,169 @@ public class CommentService {
 
     private CommentRepository commentRepository;
 
+    private UserRepository userRepository;
 
 
+    public ResponseEntity<String> add(addCommentDto dto) {
+
+        var findSeller = userRepository.findById(dto.sellerId);
+
+        if (findSeller.isEmpty()) {
+
+            return new ResponseEntity<>("seller not found", HttpStatus.BAD_REQUEST);
+
+        }
+        var currentSeller = findSeller.get();
+
+        var newComment = Comment.builder().Approved(false).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
+
+        currentSeller.getComments().add(newComment);
+        commentRepository.save(newComment);
+        userRepository.save(currentSeller);
+        return new ResponseEntity<>("comment added", HttpStatus.OK);
 
 
+    }
+
+    public ResponseEntity<String> delete(int anonymousId, int commentId) {
+
+        var findComment = commentRepository.findById(commentId);
+        if (findComment.isEmpty()) {
+            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
+        }
+        var currentComment = findComment.get();
+
+        if (currentComment.getAnonymousId() != anonymousId) {
+            return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
+
+        }
+        commentRepository.deleteById(commentId);
+        return new ResponseEntity<>("Deleted succesfully", HttpStatus.OK);
 
 
+    }
+
+    public ResponseEntity<String> update(CommentUpdateDto dto) {
+
+        var findComment = commentRepository.findById(dto.getCommentId());
+        if (findComment.isEmpty()) {
+            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
+        }
+        var currentComment = findComment.get();
+
+        if (currentComment.getAnonymousId() != dto.getAnonymousId()) {
+            return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
+
+        }
+
+        if (dto.getComment() != null && !dto.getComment().equals(currentComment.getMessage())) {
+
+            currentComment.setMessage(dto.getComment());
+        }
+        if (dto.getReview() != currentComment.getRating()) {
+            currentComment.setRating(dto.getReview());
+        }
+
+        commentRepository.save(currentComment);
+
+
+        return new ResponseEntity<>("Updated succesfully", HttpStatus.OK);
+    }
+
+
+    public List<UserReviewsDto> getApprovedReviewsBySellerId(int sellerId) throws Exception {
+
+
+        var findSeller = userRepository.findById(sellerId);
+
+        if (findSeller.isEmpty()) {
+
+            throw new Exception("Seller  not found");
+
+        }
+        var Reviews = commentRepository.sellersAllApprovedReviews(sellerId);
+        return Reviews.stream().map(UserReviewsDto::toDto).toList();
+
+
+    }
+
+
+    public List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception {
+
+
+        var findSeller = userRepository.findById(sellerId);
+
+        if (findSeller.isEmpty()) {
+
+            throw new Exception("Seller  not found");
+
+        }
+        var Reviews = commentRepository.sellersNotApprovedReviews(sellerId);
+        return Reviews.stream().map(UserReviewsDto::toDto).toList();
+
+
+    }
+
+
+    public List<UserReviewsDto> getAllNotApprovedReviews(int currentlyLoggedUserId) throws Exception {
+
+
+        var getCurrentUser = userRepository.findById(currentlyLoggedUserId);
+
+        if (getCurrentUser.isPresent() && !getCurrentUser.get().getRole().equals(UserRoleEnum.SELLER)) {
+
+            throw new Exception("Only Admin has permission");
+
+        }
+        var getdata = commentRepository.AllNotApprovedReviews();
+        return getdata.stream().map(UserReviewsDto::toDto).toList();
+
+
+    }
+
+
+    public ResponseEntity<String> ApproveUserReview(int commentId, int currentlyLoggedUserId) {
+        var getCurrentUser = userRepository.findById(currentlyLoggedUserId);
+
+        if (getCurrentUser.isPresent() && !getCurrentUser.get().getRole().equals(UserRoleEnum.SELLER)) {
+
+            return new ResponseEntity<>("Only Admin has permission", HttpStatus.BAD_REQUEST);
+
+        }
+
+        var getcomment = commentRepository.findById(commentId);
+        if (getcomment.isEmpty()) {
+            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
+        }
+
+        var currentComment = getcomment.get();
+        currentComment.setApproved(true);
+        commentRepository.save(currentComment);
+        return new ResponseEntity<>("Comment Approved", HttpStatus.OK);
+
+
+    }
+
+
+    public ResponseEntity<String> DeclineUserReview(int commentId, int currentlyLoggedUserId) {
+        var getCurrentUser = userRepository.findById(currentlyLoggedUserId);
+
+        if (getCurrentUser.isPresent() && !getCurrentUser.get().getRole().equals(UserRoleEnum.SELLER)) {
+
+            return new ResponseEntity<>("Only Admin has permission", HttpStatus.BAD_REQUEST);
+
+        }
+
+        var getcomment = commentRepository.findById(commentId);
+        if (getcomment.isEmpty()) {
+            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
+        }
+
+
+        commentRepository.deleteById(commentId);
+        return new ResponseEntity<>("Comment Deleted", HttpStatus.OK);
+
+
+    }
 
 }

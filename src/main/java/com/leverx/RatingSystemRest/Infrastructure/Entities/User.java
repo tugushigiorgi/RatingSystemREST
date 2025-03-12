@@ -1,5 +1,7 @@
 package com.leverx.RatingSystemRest.Infrastructure.Entities;
 
+
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -43,23 +45,23 @@ public class User  implements  UserDetails {
 
 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<GameObject> gameObjects=new ArrayList<>();
 
 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Comment> comments=new ArrayList<>();
 
 
 
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+
     private UserPhoto photo;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Token token;
 
 
