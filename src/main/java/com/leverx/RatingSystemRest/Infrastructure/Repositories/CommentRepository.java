@@ -11,14 +11,14 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
 
 
-    @Query(value="SELECT c FROM Comment c WHERE c.user_id = :sellerId AND c. Approved = true",nativeQuery = true)
+    @Query("SELECT c FROM Comment c WHERE c.user.id = :sellerId AND c. Approved = true")
     List<Comment> sellersAllApprovedReviews(int sellerId);
 
-    @Query(value ="SELECT c FROM Comment c WHERE c.user_id = :sellerId AND c. Approved = false ",nativeQuery = true)
+    @Query("SELECT c FROM Comment c WHERE c.user.id = :sellerId AND c. Approved = false ")
     List<Comment> sellersNotApprovedReviews(int sellerId);
 
 
-    @Query(value ="SELECT c FROM Comment c WHERE   Approved = false ",nativeQuery = true)
+    @Query("SELECT c FROM Comment c WHERE   c.Approved = false ")
     List<Comment> AllNotApprovedReviews();
 
 

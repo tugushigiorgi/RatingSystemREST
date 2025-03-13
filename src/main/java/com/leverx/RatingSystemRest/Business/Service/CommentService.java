@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -36,7 +37,16 @@ public class CommentService {
         }
         var currentSeller = findSeller.get();
 
-        var newComment = Comment.builder().Approved(false).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
+
+        boolean hasMatchingAnonymousId = currentSeller.getComments().stream()
+                .anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
+
+
+        if(hasMatchingAnonymousId){
+            return new ResponseEntity<>("anonymous with given id  already submited review", HttpStatus.BAD_REQUEST);
+        }
+
+        var newComment = Comment.builder().Approved(false).created_at(LocalDateTime.now()).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
 
         currentSeller.getComments().add(newComment);
         commentRepository.save(newComment);

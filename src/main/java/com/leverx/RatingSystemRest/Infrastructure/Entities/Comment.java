@@ -27,7 +27,7 @@ public class Comment {
 
     private Integer anonymousId;
 
-    @CreatedDate
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime created_at;
 
