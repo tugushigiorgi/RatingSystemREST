@@ -14,23 +14,20 @@ import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
 @AllArgsConstructor
 public class UserReviewsDto {
 
-
-    public String  PublishDate;
-
-    public int Review;
-
-    public String Comment;
-
-    public String SellerFullName;
-
-    public int id;
+    private String publishDate;
+    private int review;
+    private String comment;
+    private String sellerFullName;
+    private int id;
 
     public static UserReviewsDto toDto(Comment review) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        return new UserReviewsDto(review.getCreated_at().format(formatter), review.getRating(), review.getMessage(),review.getUser().fullName(),review.getId());
-
+        return UserReviewsDto.builder()
+                .publishDate(review.getCreated_at().format(formatter))
+                .review(review.getRating())
+                .comment(review.getMessage())
+                .sellerFullName(review.getUser().fullName())
+                .id(review.getId())
+                .build();
     }
-
-
-
 }

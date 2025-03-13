@@ -16,7 +16,7 @@ public interface UserPhotoRepository extends JpaRepository<UserPhoto, Integer> {
 
 
 
-    @Query("SELECT c FROM UserPhoto c WHERE  c.user.id= : userId ")
+    @Query("SELECT c FROM UserPhoto c WHERE  c.user.id= :userId ")
      UserPhoto  getUserPhotoByUserId(int userId);
 
 

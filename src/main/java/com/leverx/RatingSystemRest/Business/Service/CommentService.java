@@ -136,16 +136,10 @@ public class CommentService {
     }
 
 
-    public List<UserReviewsDto> getAllNotApprovedReviews(int currentlyLoggedUserId) throws Exception {
+    public List<UserReviewsDto> getAllNotApprovedReviews() throws Exception {
 
 
-        var getCurrentUser = userRepository.findById(currentlyLoggedUserId);
 
-        if (getCurrentUser.isPresent() && !getCurrentUser.get().getRole().equals(UserRoleEnum.SELLER)) {
-
-            throw new Exception("Only Admin has permission");
-
-        }
         var getdata = commentRepository.AllNotApprovedReviews();
         return getdata.stream().map(UserReviewsDto::toDto).toList();
 
@@ -153,14 +147,8 @@ public class CommentService {
     }
 
 
-    public ResponseEntity<String> ApproveUserReview(int commentId, int currentlyLoggedUserId) {
-        var getCurrentUser = userRepository.findById(currentlyLoggedUserId);
+    public ResponseEntity<String> ApproveUserReview(int commentId) {
 
-        if (getCurrentUser.isPresent() && !getCurrentUser.get().getRole().equals(UserRoleEnum.SELLER)) {
-
-            return new ResponseEntity<>("Only Admin has permission", HttpStatus.BAD_REQUEST);
-
-        }
 
         var getcomment = commentRepository.findById(commentId);
         if (getcomment.isEmpty()) {
@@ -176,14 +164,8 @@ public class CommentService {
     }
 
 
-    public ResponseEntity<String> DeclineUserReview(int commentId, int currentlyLoggedUserId) {
-        var getCurrentUser = userRepository.findById(currentlyLoggedUserId);
+    public ResponseEntity<String> DeclineUserReview(int commentId ) {
 
-        if (getCurrentUser.isPresent() && !getCurrentUser.get().getRole().equals(UserRoleEnum.SELLER)) {
-
-            return new ResponseEntity<>("Only Admin has permission", HttpStatus.BAD_REQUEST);
-
-        }
 
         var getcomment = commentRepository.findById(commentId);
         if (getcomment.isEmpty()) {

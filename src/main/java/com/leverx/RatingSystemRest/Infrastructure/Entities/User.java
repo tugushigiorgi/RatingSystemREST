@@ -64,6 +64,7 @@ public class User  implements  UserDetails {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private Token token;
 
+    public boolean isApprovedByAdmin;
 
 
     public String fullName(){
