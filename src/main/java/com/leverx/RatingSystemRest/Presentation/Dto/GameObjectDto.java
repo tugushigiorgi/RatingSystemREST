@@ -8,12 +8,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Builder
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+
+
 public class GameObjectDto {
 
+
+    public int id;
     public String publishDate;
 
     public String Title;
@@ -30,11 +30,35 @@ public class GameObjectDto {
     public String SellerPictureUrl;
 
 
-
     public static GameObjectDto toDto(GameObject game, String sellerphoto, int sellerid, String FullName) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
- return new GameObjectDto(game.getCreated_at().format(formatter), game.getTitle(),game.getText(),game.getPrice(),game.getPicture().getUrl(),sellerid,FullName,sellerphoto);
+        return GameObjectDto.builder()
+                .id(game.getId())
+                .text(game.getText())
+                .Title(game.getTitle())
+                .pictureUrl(game.getPicture().getUrl())
+                .price(game.getPrice())
+                .publishDate(game.getCreated_at().format(formatter))
+                .build();
+
+
     }
 
+
+//    public static GameObjectDto toProfileDto(GameObject game, String sellerphoto, int sellerid, String FullName) {
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+//        return GameObjectDto.builder()
+//                .id(game.getId())
+//                .text(game.getText())
+//                .pictureUrl(game.getPicture().getUrl())
+//                .SellerPictureUrl(sellerphoto)
+//                .price(game.getPrice())
+//                .sellerId(sellerid)
+//                .Title(game.getTitle())
+//                .publishDate(game.getCreated_at().format(formatter))
+//                .SellerFullName(FullName).build();
+
+
+ //   }
 
 }

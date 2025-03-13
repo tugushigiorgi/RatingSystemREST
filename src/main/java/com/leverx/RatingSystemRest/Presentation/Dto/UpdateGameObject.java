@@ -16,5 +16,5 @@ public class UpdateGameObject {
 
     public double price ;
 
-    private MultipartFile picture ;
+   // private MultipartFile picture ;
 }

@@ -7,18 +7,14 @@ import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UpdateGameObject;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.addGameObjectDto;
-import lombok.AllArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -28,9 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Data
@@ -44,18 +38,19 @@ public class GameObjectService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository) {
+    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository,GameObjectPictureRepository gameObjectPictureRepository) {
         this.gameObjectRepository = gameObjectRepository;
         this.userRepository = userRepository;
         this.userPhotoRepository = userPhotoRepository;
+        this.gameObjectPictureRepository = gameObjectPictureRepository;
     }
 
-    public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo,int userId) {
+    public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId) {
         var getcurrentUser = userRepository.findById(userId);
         if (getcurrentUser.isPresent()) {
             var currentUser = getcurrentUser.get();
-            String userEmail = currentUser.getEmail();
-            var savepicture = saveNewPictureOnLocalFolder(userEmail, photo);
+
+            var savepicture = saveNewPictureOnLocalFolder(userId, photo);
             if (savepicture != null) {
                 var gameObject = GameObject.builder()
                         .price(dto.getPrice())
@@ -92,13 +87,15 @@ public class GameObjectService {
 
         var currentObject = getcurrentGameObject.get();
 
-        if (currentObject.getUser().getId() != currentObject.getId()) {
+        if (currentObject.getUser().getId() != currentObject.getUser().getId()) {
 
             return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
         }
 
         try {
             gameObjectRepository.delete(currentObject);
+            Path path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
+            Files.delete(path);
             return new ResponseEntity<>("Succesfully deleted with id" + gameObjectId, HttpStatus.OK);
 
         } catch (Exception e) {
@@ -110,7 +107,7 @@ public class GameObjectService {
     }
 
 
-    public ResponseEntity<String> update(UpdateGameObject dto, int userId) {
+    public ResponseEntity<String> update(UpdateGameObject dto, MultipartFile photo, int userId) {
 
         var getcurrentUser = userRepository.findById(userId);
         var getcurrentGameObject = gameObjectRepository.findById(dto.getId());
@@ -121,7 +118,7 @@ public class GameObjectService {
         }
         var currentUser = getcurrentUser.get();
         var currentObject = getcurrentGameObject.get();
-        if (currentObject.getUser().getId() != currentObject.getId()) {
+        if (currentObject.getUser().getId() != currentObject.getUser().getId()) {
 
             return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
         }
@@ -136,15 +133,15 @@ public class GameObjectService {
         if (dto.getText() != null && !currentObject.getText().equals(dto.getText())) {
             currentObject.setText(dto.getText());
         }
-        if (dto.getPicture() != null) {
+        if (photo != null) {
 
 
-            var updatePicture = UpdatePictureOnLocalFolder(currentObject.getPicture().getUrl(), currentUser.getEmail(), dto.getPicture());
+            var updatePicture = UpdatePictureOnLocalFolder(currentObject.getPicture().getUrl(), userId, photo);
             if (updatePicture != null) {
 
 
                 currentObject.setPicture(updatePicture);
-
+                currentObject.setUpdated_at(LocalDateTime.now());
                 updatePicture.setGameObject(currentObject);
                 gameObjectPictureRepository.delete(currentObject.getPicture());
                 gameObjectRepository.save(currentObject);
@@ -155,20 +152,27 @@ public class GameObjectService {
 
             }
 
+
+
         }
-        return new ResponseEntity<>("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+        currentObject.setUpdated_at(LocalDateTime.now());
+        gameObjectRepository.save(currentObject);
+
+
+
+        return new ResponseEntity<>("object updated succesfully", HttpStatus.OK);
 
     }
 
 
-    private GameObjectPicture UpdatePictureOnLocalFolder(String CurrentFileUrl, String userEmail, MultipartFile file) {
+    private GameObjectPicture UpdatePictureOnLocalFolder(String CurrentFileUrl, int userid, MultipartFile file) {
 
 
         try {
-            Path path = Paths.get(CurrentFileUrl);
+            Path path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
             Files.delete(path);
 
-            return saveNewPictureOnLocalFolder(userEmail, file);
+            return saveNewPictureOnLocalFolder(userid, file);
 
 
         } catch (IOException e) {
@@ -179,25 +183,27 @@ public class GameObjectService {
     }
 
 
-    private GameObjectPicture saveNewPictureOnLocalFolder(String userEmail, MultipartFile picture) {
-        String userFolderPath = uploadDir + File.separator + userEmail + File.separator + "profile";
+    private GameObjectPicture saveNewPictureOnLocalFolder(int userid, MultipartFile picture) {
+        String userFolderPath = uploadDir + File.separator + userid + File.separator + "GAMES";
 
-       System.out.println(userFolderPath);
+
         File userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
             userFolder.mkdirs();
         }
         UUID uuid = UUID.randomUUID();
-        String filePath = userFolderPath + File.separator + uuid+picture.getOriginalFilename() ;
+        String modifedFileName = uuid + picture.getOriginalFilename();
+        String publicUrl = userid + File.separator + "GAMES" + File.separator + modifedFileName;
+        String filePath = userFolderPath + File.separator + modifedFileName;
         try {
 
             File savedFile = new File(filePath);
             picture.transferTo(savedFile);
             return GameObjectPicture.builder()
-                    .Url(filePath)
+                    .Url(publicUrl)
                     .size(picture.getSize())
                     .Extension(picture.getContentType())
-                    .photoName(picture.getOriginalFilename()).build();
+                    .photoName(modifedFileName).build();
 
         } catch (IOException e) {
 
@@ -219,20 +225,8 @@ public class GameObjectService {
 
         var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
 
-        return getGames.stream().map(game -> GameObjectDto.toDto(game,currentUser.getPhoto().getUrl(),sellerId,currentUser.fullName())).toList();
-
-
-
-
-
+        return getGames.stream().map(game -> GameObjectDto.toDto(game, currentUser.getPhoto().getUrl(), sellerId, currentUser.fullName())).toList();
     }
-
-
-
-
-
-
-
 
 
 }
