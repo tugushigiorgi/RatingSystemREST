@@ -13,10 +13,10 @@ public class AdminNotApprovedUserDto {
 
 
     public int id;
-    public String PictureUrl;
-    public String FullName;
-    public String Email;
-    public String Date;
+    public String pictureUrl;
+    public String fullName;
+    public String email;
+    public String date;
 
 
     public static AdminNotApprovedUserDto toDto(User user ){
@@ -25,10 +25,10 @@ public class AdminNotApprovedUserDto {
 
         return AdminNotApprovedUserDto.builder()
                 .id(user.getId())
-                .Date(user.getCreated_at().format(formatter))
-                .Email(user.getEmail())
-                .FullName(user.fullName())
-                .PictureUrl(user.getPhoto().getUrl()).build();
+                .date(user.getCreated_at().format(formatter))
+                .email(user.getEmail())
+                .fullName(user.fullName())
+                .pictureUrl(user.getPhoto().getUrl()).build();
 
 
     }

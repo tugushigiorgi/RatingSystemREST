@@ -29,7 +29,7 @@ public class DetailedUserDto {
                 .toList();
 
 
-        var totalRating = CalculateTotalRating(reviewsList);
+        var totalRating = CalculateTotalRatingDto(reviewsList);
 
         return DetailedUserDto.builder()
                 .id(user.getId())
@@ -42,7 +42,7 @@ public class DetailedUserDto {
                 .build();
 
 }
-    public static double  CalculateTotalRating(List<UserReviewsDto> comment) {
+    public static double  CalculateTotalRatingDto(List<UserReviewsDto> comment) {
         int totalRatingCount = comment.size();
         if (totalRatingCount == 0) {
             return 0;
@@ -55,5 +55,21 @@ public class DetailedUserDto {
 
 
     }
+
+    public static double  CalculateTotalRatingComment(List<Comment> comment) {
+        int totalRatingCount = comment.size();
+        if (totalRatingCount == 0) {
+            return 0;
+        }
+
+        double sumRating = comment.stream()
+                .mapToInt(Comment::getRating)
+                .sum();
+        return  sumRating / totalRatingCount;
+
+
+    }
+
+
 
 }

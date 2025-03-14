@@ -16,7 +16,7 @@ public class GameObjectDto {
     public int id;
     public String publishDate;
 
-    public String Title;
+    public String title;
 
     public String text;
 
@@ -25,9 +25,9 @@ public class GameObjectDto {
     public String pictureUrl;
 
     public int sellerId;
-    public String SellerFullName;
+    public String sellerFullName;
 
-    public String SellerPictureUrl;
+    public String sellerPictureUrl;
 
 
     public static GameObjectDto toDto(GameObject game, String sellerphoto, int sellerid, String FullName) {
@@ -35,7 +35,7 @@ public class GameObjectDto {
         return GameObjectDto.builder()
                 .id(game.getId())
                 .text(game.getText())
-                .Title(game.getTitle())
+                .title(game.getTitle())
                 .pictureUrl(game.getPicture().getUrl())
                 .price(game.getPrice())
                 .publishDate(game.getCreated_at().format(formatter))

@@ -3,22 +3,23 @@ package com.leverx.RatingSystemRest.Business.Service;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
-import com.leverx.RatingSystemRest.Presentation.Dto.AdminNotApprovedUserDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.DetailedUserDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserReviewsDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.*;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final UserPhotoRepository userPhotoRepository;
+    private PasswordEncoder passwordEncoder;
     private CommentService commentService;
 
     public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
@@ -71,6 +72,52 @@ public class UserService {
 
 
     }
+
+
+
+        public ResponseEntity<UserInfoDto> GetUserInfoById(int userId) {
+
+       var getuser= userRepository.findById(userId);
+        if(getuser.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+      var toDto=  UserInfoDto.toDto(getuser.get());
+
+        return new ResponseEntity<>(toDto, HttpStatus.OK);
+
+
+    }
+
+
+    public ResponseEntity<String> ChangePassword(int currentuserId,ChangePasswordDto dto) {
+
+        var getuser= userRepository.findById(currentuserId).get();
+
+        if(!Objects.equals(dto.newPassword, dto.repeatPassword)){
+            return new ResponseEntity<>("new passwords does not match", HttpStatus.BAD_REQUEST);
+        }
+
+        if(passwordEncoder.encode(dto.oldPassword).equals(getuser.getPassword())){
+
+            return new ResponseEntity<>("new password is same, submit different", HttpStatus.OK);
+        }
+
+        if(!passwordEncoder.matches( dto.oldPassword,getuser.getPassword())) {
+            return new ResponseEntity<>("incorrect password", HttpStatus.BAD_REQUEST);
+        }
+        var newPassword= passwordEncoder.encode(dto.newPassword);
+        getuser.setPassword(newPassword);
+        userRepository.save(getuser);
+        return new ResponseEntity<>("password changed", HttpStatus.OK);
+
+
+
+    }
+
+
+
+
+
 
 
 }
