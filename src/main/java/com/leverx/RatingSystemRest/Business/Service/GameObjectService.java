@@ -221,11 +221,11 @@ public class GameObjectService {
 
             throw new Exception("User not found");
         }
-        var currentUser = getUser.get();
+
 
         var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
 
-        return getGames.stream().map(game -> GameObjectDto.toDto(game, currentUser.getPhoto().getUrl(), sellerId, currentUser.fullName())).toList();
+        return getGames.stream().map(GameObjectDto::toDto).toList();
     }
 
 

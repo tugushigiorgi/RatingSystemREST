@@ -12,19 +12,26 @@ import java.util.Optional;
 public interface UserRepository  extends JpaRepository<User, Integer> {
 
 
+    @Query("SELECT u FROM User  u WHERE u.role='SELLER' and u.isApprovedByAdmin =false")
+    List<User> notApprovedSellersList();
 
-    @Query("SELECT c FROM User  c WHERE c.role='SELLER' and c.isApprovedByAdmin =false")
-    List<User>   notApprovedSellersList();
 
+    @Query("SELECT u FROM User  u WHERE u.role='SELLER' and u.isApprovedByAdmin =true")
+    List<User> ApprovedSellersList();
 
-    @Query("SELECT c FROM User  c WHERE c.role='SELLER' and c.isApprovedByAdmin =true")
-    List<User>   ApprovedSellersList();
-
-    @Query("SELECT c FROM User  c WHERE c.role='SELLER' and c.isApprovedByAdmin =true and c.first_name like  %:username%")
+    @Query("SELECT u FROM User u WHERE u.role='SELLER' and u.isApprovedByAdmin =true and u.first_name like  %:username%")
     List<User> GetRegisteredSellerByUsername(String username);
 
-
-
+    @Query("""
+            SELECT u 
+            FROM User u 
+            WHERE u.role = 'SELLER' 
+            AND u.isApprovedByAdmin = true
+            AND u.TotalRating>0 
+            ORDER BY u.TotalRating DESC
+            LIMIT 5
+            """)
+    List<User> findTop5RatedSellers();
 
 
 }

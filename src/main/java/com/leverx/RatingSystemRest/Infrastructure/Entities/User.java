@@ -54,7 +54,7 @@ public class User  implements  UserDetails {
     private List<Comment> comments=new ArrayList<>();
 
 
-
+    private double TotalRating;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
 

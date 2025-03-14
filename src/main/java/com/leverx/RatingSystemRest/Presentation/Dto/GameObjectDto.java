@@ -30,7 +30,7 @@ public class GameObjectDto {
     public String sellerPictureUrl;
 
 
-    public static GameObjectDto toDto(GameObject game, String sellerphoto, int sellerid, String FullName) {
+    public static GameObjectDto toDto(GameObject game) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return GameObjectDto.builder()
                 .id(game.getId())
@@ -45,20 +45,6 @@ public class GameObjectDto {
     }
 
 
-//    public static GameObjectDto toProfileDto(GameObject game, String sellerphoto, int sellerid, String FullName) {
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-//        return GameObjectDto.builder()
-//                .id(game.getId())
-//                .text(game.getText())
-//                .pictureUrl(game.getPicture().getUrl())
-//                .SellerPictureUrl(sellerphoto)
-//                .price(game.getPrice())
-//                .sellerId(sellerid)
-//                .Title(game.getTitle())
-//                .publishDate(game.getCreated_at().format(formatter))
-//                .SellerFullName(FullName).build();
 
-
- //   }
 
 }
