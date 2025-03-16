@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
@@ -16,23 +15,25 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class Token {
-
+public class PasswordRecoveryToken {
 
     @Id
     @GeneratedValue
-    private Integer id;
+    private Integer id; // More secure than Integer
 
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime created_at;
-    private LocalDateTime expires_at;
-    @Column(unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String token;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime expiresAt;
+
+
     @JsonIgnore
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
-
-
 }

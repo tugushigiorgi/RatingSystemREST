@@ -15,6 +15,7 @@ import com.leverx.RatingSystemRest.Presentation.Dto.addGameObjectDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -75,7 +76,7 @@ public class GameObjectService {
 
     }
 
-
+    @Transactional
     public ResponseEntity<String> remove(int gameObjectId, int userId) {
 
         var getcurrentUser = userRepository.findById(userId);

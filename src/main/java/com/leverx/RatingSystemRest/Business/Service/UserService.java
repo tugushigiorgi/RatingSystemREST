@@ -1,10 +1,7 @@
 package com.leverx.RatingSystemRest.Business.Service;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.*;
-import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
-import com.leverx.RatingSystemRest.Infrastructure.Repositories.TokenRepository;
-import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
-import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.*;
 import com.leverx.RatingSystemRest.Presentation.Dto.*;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -35,10 +33,15 @@ public class UserService {
     private UserPhotoRepository userPhotoRepository;
     private EmailService emailService;
     private TokenRepository tokenRepository;
-    public UserService(PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, UserRepository userRepository) {
+    private passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailService emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository) {
+        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userPhotoRepository = userPhotoRepository;
-        this.userRepository = userRepository;
+        this.emailService = emailService;
+        this.tokenRepository = tokenRepository;
+        this.pwdRecoveryTokenRepository = pwdRecoveryTokenRepository;
     }
 
     public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
@@ -79,7 +82,7 @@ public class UserService {
 
 
     }
-
+    @Transactional
     public ResponseEntity<String> DeleteById(int userId) {
 
         var user = userRepository.findById(userId);
@@ -106,7 +109,7 @@ public class UserService {
 
     }
 
-
+@Transactional
     public ResponseEntity<String> ChangePassword(int currentuserId, ChangePasswordDto dto) {
 
         var getuser = userRepository.findById(currentuserId).get();
@@ -167,16 +170,14 @@ public class UserService {
 
      public ResponseEntity<String> registerUser(RegisterUserDto dto,MultipartFile photo) {
 
-        if(dto.email.isEmpty() || dto.password.isEmpty() ||dto.confirmPassword.isEmpty()  || dto.name.isEmpty() || dto.surname.isEmpty()) {
+        if(dto.email.isEmpty() || dto.password.isEmpty()   || dto.name.isEmpty() || dto.surname.isEmpty()) {
             return new ResponseEntity<>("Please fill all fields", HttpStatus.BAD_REQUEST);
         }
         var checkifExists=userRepository.findByEmail(dto.email);
         if(checkifExists.isPresent()) {
              return new ResponseEntity<>("email already in use", HttpStatus.CONFLICT);
          }
-         if(!Objects.equals(dto.password, dto.confirmPassword)){
-             return new ResponseEntity<>("password does not match", HttpStatus.BAD_REQUEST);
-         }
+
 
       var createUser=   User.builder()
                  .created_at(LocalDateTime.now())
@@ -219,26 +220,31 @@ public class UserService {
          tokenRepository.save(token);
 
      }
+@Transactional
+   public  ResponseEntity<String> ActivateAccount(String token ) {
 
-     private ResponseEntity<String> ActivateAccount(String token, User usr) {
+         var  savedToken = tokenRepository.findByToken(token) ;
+         if(savedToken.isEmpty()) { return new ResponseEntity<>("Token not found", HttpStatus.NOT_FOUND); }
 
-         var  savedToken = tokenRepository.findByToken(token);
 
-            if(savedToken.isPresent()) {
+       var user = userRepository.findById(savedToken.get().getUser().getId())
+               .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-         if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
-             return new ResponseEntity<>("token expired", HttpStatus.BAD_REQUEST);
-          }
 
-         var user = userRepository.findById(savedToken.get().getUser().getId())
-                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-         user.setHasVerifiedEmail(true);
-         userRepository.save(user);
+       if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
 
-            tokenRepository.delete(savedToken.get());
+           tokenRepository.deleteById(savedToken.get().getId());
+           SendRegistrationEmail(user);
 
-     }
-            return new ResponseEntity<>("token not found", HttpStatus.NOT_FOUND);
+           return new ResponseEntity<>("token expired, New email sent to email", HttpStatus.BAD_REQUEST);
+       }
+       user.setHasVerifiedEmail(true);
+
+       userRepository.save(user);
+    tokenRepository.deleteTokenById(savedToken.get().getId());
+
+
+       return new ResponseEntity<>("Succesfully Enabled", HttpStatus.OK);
      }
 
 
@@ -282,5 +288,65 @@ public class UserService {
 
     }
 
+
+
+
+    public ResponseEntity<String> SendRecoverCode(String email){
+        var getuser=userRepository.findByEmail(email);
+        if(getuser.isEmpty()) {
+            return new ResponseEntity<>("User  not found with email addresss", HttpStatus.NOT_FOUND);
+        }
+        var currentuser=getuser.get();
+        String generatedtoken= UUID.randomUUID().toString();
+
+        emailService.sendConfirmationEmail(currentuser.getEmail(),generatedtoken);
+        var token = PasswordRecoveryToken.builder()
+                .token(generatedtoken)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .user(currentuser)
+                .build();
+        pwdRecoveryTokenRepository.save(token);
+        emailService.sendRecoverLink(currentuser.getEmail(),generatedtoken);
+
+
+        return new ResponseEntity<>("Email sent successfully", HttpStatus.OK);
+
+
+
+
+    }
+
+    public ResponseEntity<String> updatePassword(RecoverPasswordDto dto) {
+        System.out.println(dto);
+
+        var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+
+
+        if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
+            pwdRecoveryTokenRepository.deleteById(savedToken.getId());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token expired");
+        }
+
+
+        var user = userRepository.findById(savedToken.getUser().getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+
+        if (!dto.getNewpassword().equals(dto.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Passwords do not match");
+        }
+
+
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        userRepository.save(user);
+
+
+        pwdRecoveryTokenRepository.DeleteByID(savedToken.getId());
+
+        return ResponseEntity.ok("Password updated successfully");
+    }
 
 }

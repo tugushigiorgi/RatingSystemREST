@@ -27,12 +27,7 @@ public class UserController {
 
 
 
-    public ResponseEntity<String> RegisterUser(@RequestBody RegisterUserDto dto, MultipartFile file){
 
-      return userService.registerUser(dto,file);
-
-
-    }
 
 
 

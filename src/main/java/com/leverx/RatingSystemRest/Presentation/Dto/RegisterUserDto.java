@@ -14,8 +14,7 @@ public class RegisterUserDto {
     public String email;
     @NotNull
     public String password;
-    @NotNull
-    public String confirmPassword;
+
 
 
 }

@@ -27,7 +27,7 @@ public class User  implements  UserDetails {
 
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
     private String first_name;
@@ -62,8 +62,13 @@ public class User  implements  UserDetails {
     private UserPhoto photo;
 
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+
     private Token token;
+
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    private PasswordRecoveryToken passwordRecoveryToken;
 
     public boolean isApprovedByAdmin;
 
