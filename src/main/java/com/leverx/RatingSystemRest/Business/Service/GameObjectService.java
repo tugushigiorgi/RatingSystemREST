@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -227,6 +228,30 @@ public class GameObjectService {
 
         return getGames.stream().map(GameObjectDto::toDto).toList();
     }
+
+
+
+    public ResponseEntity<List<GameObjectDto>> searchGameObjects(int sellerRating,String title){
+        List<GameObject> data;
+
+        if (title == null || title.isBlank()) {
+            data = gameObjectRepository.filterBySellerRating(sellerRating);
+        } else {
+            data = gameObjectRepository.filterByTitleAndRating(title, sellerRating);
+        }
+
+        List<GameObjectDto> dtoList = data.stream()
+                .map(GameObjectDto::toDto)
+                .toList();
+
+        return ResponseEntity.ok(dtoList);
+
+
+
+
+
+    }
+
 
 
 }

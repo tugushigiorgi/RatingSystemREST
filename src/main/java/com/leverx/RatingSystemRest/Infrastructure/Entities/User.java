@@ -39,6 +39,7 @@ public class User  implements  UserDetails {
     @Column(nullable = false, updatable = false)
     private LocalDateTime created_at;
 
+    private boolean HasVerifiedEmail;
 
     @Enumerated(EnumType.STRING)
     private UserRoleEnum  role;
@@ -88,6 +89,6 @@ public class User  implements  UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return HasVerifiedEmail;
     }
 }

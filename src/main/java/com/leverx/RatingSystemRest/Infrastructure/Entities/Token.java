@@ -27,7 +27,8 @@ public class Token {
     @Column(nullable = false, updatable = false)
     private LocalDateTime created_at;
     private LocalDateTime expires_at;
-
+    @Column(unique = true)
+    private String token;
     @JsonIgnore
     @OneToOne
     @JoinColumn(name = "user_id")

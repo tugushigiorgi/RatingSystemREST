@@ -1,27 +1,45 @@
 package com.leverx.RatingSystemRest.Business.Service;
 
-import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.*;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.TokenRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.*;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
-@AllArgsConstructor
+
 public class UserService {
     private final UserRepository userRepository;
 
+    @Value("${file.upload-dir}")
+    private String uploadDir;
     private PasswordEncoder passwordEncoder;
-
+    private UserPhotoRepository userPhotoRepository;
+    private EmailService emailService;
+    private TokenRepository tokenRepository;
+    public UserService(PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, UserRepository userRepository) {
+        this.passwordEncoder = passwordEncoder;
+        this.userPhotoRepository = userPhotoRepository;
+        this.userRepository = userRepository;
+    }
 
     public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
         return userRepository.notApprovedSellersList().stream().map(AdminNotApprovedUserDto::toDto).toList();
@@ -144,6 +162,125 @@ public class UserService {
                     .gameObjects(gameList).build(),HttpStatus.OK);
 
      }
+
+
+
+     public ResponseEntity<String> registerUser(RegisterUserDto dto,MultipartFile photo) {
+
+        if(dto.email.isEmpty() || dto.password.isEmpty() ||dto.confirmPassword.isEmpty()  || dto.name.isEmpty() || dto.surname.isEmpty()) {
+            return new ResponseEntity<>("Please fill all fields", HttpStatus.BAD_REQUEST);
+        }
+        var checkifExists=userRepository.findByEmail(dto.email);
+        if(checkifExists.isPresent()) {
+             return new ResponseEntity<>("email already in use", HttpStatus.CONFLICT);
+         }
+         if(!Objects.equals(dto.password, dto.confirmPassword)){
+             return new ResponseEntity<>("password does not match", HttpStatus.BAD_REQUEST);
+         }
+
+      var createUser=   User.builder()
+                 .created_at(LocalDateTime.now())
+                 .first_name(dto.name)
+                 .last_name(dto.surname)
+                 .email(dto.email)
+                 .password(passwordEncoder.encode(dto.password))
+                 .isApprovedByAdmin(false)
+
+                 .role(UserRoleEnum.SELLER)
+                   .HasVerifiedEmail(false)
+                 .build();
+
+         userRepository.save(createUser);
+
+        var savephoto= SaveUserPictureLocal( createUser.getId(),photo);
+        if(savephoto!=null) {
+            savephoto.setUser(createUser);
+            userPhotoRepository.save(savephoto);
+        }else{
+            return new ResponseEntity<>("picture can not be saved", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+         SendRegistrationEmail(createUser);
+    return new ResponseEntity<>("User registered successfully, Confirmation Code sent", HttpStatus.OK);
+     }
+
+
+
+     public void SendRegistrationEmail(User user) {
+
+        String generatedtoken= UUID.randomUUID().toString();
+
+        emailService.sendConfirmationEmail(user.getEmail(),generatedtoken);
+         var token = Token.builder()
+                 .token(generatedtoken)
+                 .created_at(LocalDateTime.now())
+                 .expires_at(LocalDateTime.now().plusHours(24))
+                 .user(user)
+                 .build();
+         tokenRepository.save(token);
+
+     }
+
+     private ResponseEntity<String> ActivateAccount(String token, User usr) {
+
+         var  savedToken = tokenRepository.findByToken(token);
+
+            if(savedToken.isPresent()) {
+
+         if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
+             return new ResponseEntity<>("token expired", HttpStatus.BAD_REQUEST);
+          }
+
+         var user = userRepository.findById(savedToken.get().getUser().getId())
+                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+         user.setHasVerifiedEmail(true);
+         userRepository.save(user);
+
+            tokenRepository.delete(savedToken.get());
+
+     }
+            return new ResponseEntity<>("token not found", HttpStatus.NOT_FOUND);
+     }
+
+
+
+
+
+
+
+
+
+    private UserPhoto SaveUserPictureLocal(int userid, MultipartFile picture) {
+
+        String userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
+
+
+        File userFolder = new File(userFolderPath);
+        if (!userFolder.exists()) {
+            userFolder.mkdirs();
+        }
+        UUID uuid = UUID.randomUUID();
+        String modifedFileName = uuid + picture.getOriginalFilename();
+        String publicUrl = userid + File.separator + "Profile" + File.separator + modifedFileName;
+        String filePath = userFolderPath + File.separator + modifedFileName;
+        try {
+
+            File savedFile = new File(filePath);
+            picture.transferTo(savedFile);
+            return UserPhoto .builder()
+                    .Url(publicUrl)
+                    .size(picture.getSize())
+                    .Extension(picture.getContentType())
+                    .photoName(modifedFileName).build();
+
+        } catch (IOException e) {
+
+
+            e.printStackTrace();
+
+        }
+        return null;
+
+    }
 
 
 }

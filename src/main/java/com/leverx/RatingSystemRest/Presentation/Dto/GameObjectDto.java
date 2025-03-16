@@ -34,6 +34,9 @@ public class GameObjectDto {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         return GameObjectDto.builder()
                 .id(game.getId())
+                .sellerId(game.getUser().getId())
+                .sellerFullName(game.getUser().fullName())
+                .sellerPictureUrl(game.getUser().getPhoto().getUrl())
                 .text(game.getText())
                 .title(game.getTitle())
                 .pictureUrl(game.getPicture().getUrl())

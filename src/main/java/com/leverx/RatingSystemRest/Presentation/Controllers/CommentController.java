@@ -17,12 +17,12 @@ public class CommentController {
         }
 
 
-        @PostMapping
-        public ResponseEntity<String> add(@RequestBody addCommentDto dto ){
-
-            return commentService.add(dto);
-        }
-
+//        @PostMapping
+//        public ResponseEntity<String> add(@RequestBody addCommentDto dto ){
+//
+//            return commentService.add(dto);
+//        }
+//
 
 
 
