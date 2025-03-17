@@ -1,4 +1,4 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.UserDtos;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;

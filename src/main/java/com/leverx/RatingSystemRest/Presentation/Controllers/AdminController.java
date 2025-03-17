@@ -2,9 +2,9 @@ package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 import com.leverx.RatingSystemRest.Business.Service.CommentService;
 import com.leverx.RatingSystemRest.Business.Service.UserService;
-import com.leverx.RatingSystemRest.Presentation.Dto.AdminNotApprovedUserDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.DetailedUserDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserReviewsDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

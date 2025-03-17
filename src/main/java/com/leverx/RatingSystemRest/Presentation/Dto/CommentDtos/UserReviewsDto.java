@@ -1,8 +1,7 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;

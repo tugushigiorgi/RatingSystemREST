@@ -1,12 +1,11 @@
 package com.leverx.RatingSystemRest.Business.Service;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
-import com.leverx.RatingSystemRest.Infrastructure.Entities.UserRoleEnum;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentUpdateDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserReviewsDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.addCommentDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 @Service
 @AllArgsConstructor

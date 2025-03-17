@@ -4,13 +4,13 @@ import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObjectPicture;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectPictureRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
-import com.leverx.RatingSystemRest.Presentation.Dto.GameObjectDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UpdateGameObject;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.UpdateGameObject;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectRepository;
-import com.leverx.RatingSystemRest.Presentation.Dto.addGameObjectDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.addGameObjectDto;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 

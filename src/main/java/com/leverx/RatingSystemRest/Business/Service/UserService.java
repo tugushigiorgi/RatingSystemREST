@@ -2,12 +2,18 @@ package com.leverx.RatingSystemRest.Business.Service;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.*;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.*;
-import com.leverx.RatingSystemRest.Presentation.Dto.*;
-import lombok.AllArgsConstructor;
+import com.leverx.RatingSystemRest.Infrastructure.Security.JwtFactory;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.jwtDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,10 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 
@@ -34,14 +37,16 @@ public class UserService {
     private EmailService emailService;
     private TokenRepository tokenRepository;
     private passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
+    private JwtFactory jwtFactory;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailService emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailService emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository, JwtFactory jwtFactory) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userPhotoRepository = userPhotoRepository;
         this.emailService = emailService;
         this.tokenRepository = tokenRepository;
         this.pwdRecoveryTokenRepository = pwdRecoveryTokenRepository;
+        this.jwtFactory = jwtFactory;
     }
 
     public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
@@ -82,6 +87,7 @@ public class UserService {
 
 
     }
+
     @Transactional
     public ResponseEntity<String> DeleteById(int userId) {
 
@@ -109,7 +115,7 @@ public class UserService {
 
     }
 
-@Transactional
+    @Transactional
     public ResponseEntity<String> ChangePassword(int currentuserId, ChangePasswordDto dto) {
 
         var getuser = userRepository.findById(currentuserId).get();
@@ -148,111 +154,104 @@ public class UserService {
     }
 
 
+    public ResponseEntity<SellerProfileDto> GetSellerProfileById(int userId) {
 
-     public ResponseEntity<SellerProfileDto> GetSellerProfileById(int userId) {
+        var getuser = userRepository.findById(userId);
+        if (getuser.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        var currentSeller = getuser.get();
 
-         var getuser = userRepository.findById(userId);
-         if (getuser.isEmpty()) {
-             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-         }
-         var currentSeller = getuser.get();
+        var info = UserInfoDto.toDto(currentSeller);
+        var gameList = currentSeller.getGameObjects().stream().map(GameObjectDto::toDto).toList();
 
-         var info = UserInfoDto.toDto(currentSeller);
-         var gameList=currentSeller.getGameObjects().stream().map(GameObjectDto::toDto).toList();
+        return new ResponseEntity<>(SellerProfileDto.builder()
+                .userInfo(info)
+                .gameObjects(gameList).build(), HttpStatus.OK);
 
-        return new ResponseEntity<>( SellerProfileDto.builder()
-                    .userInfo(info)
-                    .gameObjects(gameList).build(),HttpStatus.OK);
-
-     }
-
+    }
 
 
-     public ResponseEntity<String> registerUser(RegisterUserDto dto,MultipartFile photo) {
+    public ResponseEntity<String> registerUser(RegisterUserDto dto, MultipartFile photo) {
 
-        if(dto.email.isEmpty() || dto.password.isEmpty()   || dto.name.isEmpty() || dto.surname.isEmpty()) {
+        if (dto.email.isEmpty() || dto.password.isEmpty() || dto.name.isEmpty() || dto.surname.isEmpty()) {
             return new ResponseEntity<>("Please fill all fields", HttpStatus.BAD_REQUEST);
         }
-        var checkifExists=userRepository.findByEmail(dto.email);
-        if(checkifExists.isPresent()) {
-             return new ResponseEntity<>("email already in use", HttpStatus.CONFLICT);
-         }
+        var checkifExists = userRepository.findByEmail(dto.email);
+        if (checkifExists.isPresent()) {
+            return new ResponseEntity<>("email already in use", HttpStatus.CONFLICT);
+        }
 
 
-      var createUser=   User.builder()
-                 .created_at(LocalDateTime.now())
-                 .first_name(dto.name)
-                 .last_name(dto.surname)
-                 .email(dto.email)
-                 .password(passwordEncoder.encode(dto.password))
-                 .isApprovedByAdmin(false)
+        var createUser = User.builder()
+                .created_at(LocalDateTime.now())
+                .first_name(dto.name)
+                .last_name(dto.surname)
+                .email(dto.email)
+                .password(passwordEncoder.encode(dto.password))
+                .isApprovedByAdmin(false)
 
-                 .role(UserRoleEnum.SELLER)
-                   .HasVerifiedEmail(false)
-                 .build();
+                .role(UserRoleEnum.SELLER)
+                .HasVerifiedEmail(false)
+                .build();
 
-         userRepository.save(createUser);
+        userRepository.save(createUser);
 
-        var savephoto= SaveUserPictureLocal( createUser.getId(),photo);
-        if(savephoto!=null) {
+        var savephoto = SaveUserPictureLocal(createUser.getId(), photo);
+        if (savephoto != null) {
             savephoto.setUser(createUser);
             userPhotoRepository.save(savephoto);
-        }else{
+        } else {
             return new ResponseEntity<>("picture can not be saved", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-         SendRegistrationEmail(createUser);
-    return new ResponseEntity<>("User registered successfully, Confirmation Code sent", HttpStatus.OK);
-     }
+        SendRegistrationEmail(createUser);
+        return new ResponseEntity<>("User registered successfully, Confirmation Code sent", HttpStatus.OK);
+    }
 
 
+    public void SendRegistrationEmail(User user) {
 
-     public void SendRegistrationEmail(User user) {
+        String generatedtoken = UUID.randomUUID().toString();
 
-        String generatedtoken= UUID.randomUUID().toString();
+        emailService.sendConfirmationEmail(user.getEmail(), generatedtoken);
+        var token = Token.builder()
+                .token(generatedtoken)
+                .created_at(LocalDateTime.now())
+                .expires_at(LocalDateTime.now().plusHours(24))
+                .user(user)
+                .build();
+        tokenRepository.save(token);
 
-        emailService.sendConfirmationEmail(user.getEmail(),generatedtoken);
-         var token = Token.builder()
-                 .token(generatedtoken)
-                 .created_at(LocalDateTime.now())
-                 .expires_at(LocalDateTime.now().plusHours(24))
-                 .user(user)
-                 .build();
-         tokenRepository.save(token);
+    }
 
-     }
-@Transactional
-   public  ResponseEntity<String> ActivateAccount(String token ) {
+    @Transactional
+    public ResponseEntity<String> ActivateAccount(String token) {
 
-         var  savedToken = tokenRepository.findByToken(token) ;
-         if(savedToken.isEmpty()) { return new ResponseEntity<>("Token not found", HttpStatus.NOT_FOUND); }
-
-
-       var user = userRepository.findById(savedToken.get().getUser().getId())
-               .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        var savedToken = tokenRepository.findByToken(token);
+        if (savedToken.isEmpty()) {
+            return new ResponseEntity<>("Token not found", HttpStatus.NOT_FOUND);
+        }
 
 
-       if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
-
-           tokenRepository.deleteById(savedToken.get().getId());
-           SendRegistrationEmail(user);
-
-           return new ResponseEntity<>("token expired, New email sent to email", HttpStatus.BAD_REQUEST);
-       }
-       user.setHasVerifiedEmail(true);
-
-       userRepository.save(user);
-    tokenRepository.deleteTokenById(savedToken.get().getId());
+        var user = userRepository.findById(savedToken.get().getUser().getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
 
-       return new ResponseEntity<>("Succesfully Enabled", HttpStatus.OK);
-     }
+        if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
+
+            tokenRepository.deleteById(savedToken.get().getId());
+            SendRegistrationEmail(user);
+
+            return new ResponseEntity<>("token expired, New email sent to email", HttpStatus.BAD_REQUEST);
+        }
+        user.setHasVerifiedEmail(true);
+
+        userRepository.save(user);
+        tokenRepository.deleteTokenById(savedToken.get().getId());
 
 
-
-
-
-
-
+        return new ResponseEntity<>("Succesfully Enabled", HttpStatus.OK);
+    }
 
 
     private UserPhoto SaveUserPictureLocal(int userid, MultipartFile picture) {
@@ -272,7 +271,7 @@ public class UserService {
 
             File savedFile = new File(filePath);
             picture.transferTo(savedFile);
-            return UserPhoto .builder()
+            return UserPhoto.builder()
                     .Url(publicUrl)
                     .size(picture.getSize())
                     .Extension(picture.getContentType())
@@ -289,17 +288,15 @@ public class UserService {
     }
 
 
-
-
-    public ResponseEntity<String> SendRecoverCode(String email){
-        var getuser=userRepository.findByEmail(email);
-        if(getuser.isEmpty()) {
+    public ResponseEntity<String> SendRecoverCode(String email) {
+        var getuser = userRepository.findByEmail(email);
+        if (getuser.isEmpty()) {
             return new ResponseEntity<>("User  not found with email addresss", HttpStatus.NOT_FOUND);
         }
-        var currentuser=getuser.get();
-        String generatedtoken= UUID.randomUUID().toString();
+        var currentuser = getuser.get();
+        String generatedtoken = UUID.randomUUID().toString();
 
-        emailService.sendConfirmationEmail(currentuser.getEmail(),generatedtoken);
+        emailService.sendConfirmationEmail(currentuser.getEmail(), generatedtoken);
         var token = PasswordRecoveryToken.builder()
                 .token(generatedtoken)
                 .createdAt(LocalDateTime.now())
@@ -307,12 +304,10 @@ public class UserService {
                 .user(currentuser)
                 .build();
         pwdRecoveryTokenRepository.save(token);
-        emailService.sendRecoverLink(currentuser.getEmail(),generatedtoken);
+        emailService.sendRecoverLink(currentuser.getEmail(), generatedtoken);
 
 
         return new ResponseEntity<>("Email sent successfully", HttpStatus.OK);
-
-
 
 
     }
@@ -348,5 +343,33 @@ public class UserService {
 
         return ResponseEntity.ok("Password updated successfully");
     }
+
+
+    public ResponseEntity<jwtDto> Login(AuthenticationManager authenticationManager, Logindto logindto) {
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
+
+
+            Optional<User> userDetails = userRepository.findByEmail(logindto.getEmail());
+
+            if (userDetails.isPresent()) {
+
+
+                jwtFactory = new JwtFactory();
+
+            var token =jwtFactory.generateToken(userDetails.get());
+            var dto=new jwtDto(token,userDetails.get().getRole().toString());
+             return ResponseEntity.ok(dto);
+            }
+        } catch (Exception e) {
+            System.out.println("Authentication failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+
+    }
+
 
 }

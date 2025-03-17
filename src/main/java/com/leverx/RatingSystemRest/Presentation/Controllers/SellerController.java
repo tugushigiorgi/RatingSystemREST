@@ -4,14 +4,13 @@ import com.leverx.RatingSystemRest.Business.Service.CommentService;
 import com.leverx.RatingSystemRest.Business.Service.GameObjectService;
 import com.leverx.RatingSystemRest.Business.Service.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
-import com.leverx.RatingSystemRest.Presentation.Dto.GameObjectDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserInfoDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserReviewsDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,30 +29,41 @@ public class SellerController {
 
 
     @GetMapping("/games")
-    public List<GameObjectDto> MyGames() throws Exception {
-       //TODO CURRENTLY LOGGED USER ID
-     return   gameObjectService.getGameObjectsBySellerId(2);
+    public List<GameObjectDto> MyGames(Authentication authentication) throws Exception {
+        if(authentication.getName()!=null) {
+            var user = userRepository.findByEmail(authentication.getName());
+
+            return   gameObjectService.getGameObjectsBySellerId(user.get().getId());
+        }
+        return null;
+
 
    }
 
    @GetMapping("/reviews")
-   public List<UserReviewsDto> MyReviews() throws Exception {
-
-        //TODO currently logged user
+   public List<UserReviewsDto> MyReviews(Authentication authentication) throws Exception {
 
 
-      return commentService.getApprovedReviewsBySellerId(2);
+       if(authentication.getName()!=null) {
+           var user = userRepository.findByEmail(authentication.getName());
+
+           return commentService.getApprovedReviewsBySellerId(user.get().getId());
+       }
+
+      return null;
 
 
    }
 
    @GetMapping("/info")
-   public ResponseEntity<UserInfoDto> currenlysignedUserInfo()   {
+   public ResponseEntity<UserInfoDto> currenlysignedUserInfo(Authentication authentication)   {
+       if(authentication.getName()!=null) {
+           var user = userRepository.findByEmail(authentication.getName());
 
 
-        //TODO currently logged user
-       return userService.GetUserInfoById(2);
-
+           return userService.GetUserInfoById(user.get().getId());
+       }
+       return null;
 
 
    }

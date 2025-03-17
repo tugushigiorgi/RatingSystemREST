@@ -5,10 +5,10 @@ import com.leverx.RatingSystemRest.Business.Service.CommentService;
 import com.leverx.RatingSystemRest.Business.Service.EmailService;
 import com.leverx.RatingSystemRest.Business.Service.GameObjectService;
 import com.leverx.RatingSystemRest.Business.Service.UserService;
-import com.leverx.RatingSystemRest.Presentation.Dto.GameObjectDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.SellerProfileDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserInfoDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.addCommentDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/main")
 public class MainController {
     private UserService userService;
     private EmailService emailService;

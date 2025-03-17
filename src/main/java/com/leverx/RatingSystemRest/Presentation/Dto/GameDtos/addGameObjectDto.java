@@ -1,8 +1,7 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.GameDtos;
 
 
 import lombok.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @Builder
 @Getter

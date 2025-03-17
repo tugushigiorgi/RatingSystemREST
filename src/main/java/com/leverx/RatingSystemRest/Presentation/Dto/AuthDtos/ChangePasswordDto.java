@@ -1,6 +1,5 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Builder

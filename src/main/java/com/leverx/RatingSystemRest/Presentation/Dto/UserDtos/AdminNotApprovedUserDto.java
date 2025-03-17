@@ -1,4 +1,4 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.UserDtos;
 
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;

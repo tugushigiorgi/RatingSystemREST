@@ -1,10 +1,8 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.GameDtos;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
-import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Builder

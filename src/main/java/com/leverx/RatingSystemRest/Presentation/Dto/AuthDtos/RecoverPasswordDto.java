@@ -1,4 +1,4 @@
-package com.leverx.RatingSystemRest.Presentation.Dto;
+package com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos;
 
 
 import lombok.*;
