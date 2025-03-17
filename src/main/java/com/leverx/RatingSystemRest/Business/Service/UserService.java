@@ -5,6 +5,7 @@ import com.leverx.RatingSystemRest.Infrastructure.Repositories.*;
 import com.leverx.RatingSystemRest.Infrastructure.Security.JwtFactory;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.isAdminDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.jwtDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.*;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 
@@ -95,10 +101,47 @@ public class UserService {
         if (user.isEmpty()) {
             return new ResponseEntity<>("user not found", HttpStatus.NOT_FOUND);
         }
+        deleteUserFolderByUrl(uploadDir+ File.separator+userId);
         userRepository.deleteById(userId);
+
         return new ResponseEntity<>("user deleted", HttpStatus.OK);
 
 
+    }
+
+
+    private boolean deleteUserFolderByUrl(String folderUrl) {
+        try {
+            Path folderPath = Paths.get(folderUrl);
+
+            if (!Files.exists(folderPath)) {
+                System.out.println("Folder does not exist: " + folderUrl);
+                return false;
+            }
+            deleteRecursively(folderPath);
+            System.out.println("Folder and all its contents deleted successfully: " + folderUrl);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static void deleteRecursively(Path path) throws IOException {
+        try (Stream<Path> files = Files.walk(path)) {
+            files.sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            if (Files.isDirectory(p)) {
+                                Files.delete(p);
+                            } else {
+                                Files.delete(p);
+                            }
+                        } catch (IOException e) {
+                            System.err.println("Failed to delete: " + p);
+                        }
+                    });
+        }
     }
 
 
@@ -115,7 +158,7 @@ public class UserService {
 
     }
 
-    @Transactional
+
     public ResponseEntity<String> ChangePassword(int currentuserId, ChangePasswordDto dto) {
 
         var getuser = userRepository.findById(currentuserId).get();
@@ -236,6 +279,9 @@ public class UserService {
         var user = userRepository.findById(savedToken.get().getUser().getId())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        if (user.isHasVerifiedEmail()) {
+            return new ResponseEntity<>("Account is already verified", HttpStatus.BAD_REQUEST);
+        }
 
         if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
 
@@ -293,10 +339,14 @@ public class UserService {
         if (getuser.isEmpty()) {
             return new ResponseEntity<>("User  not found with email addresss", HttpStatus.NOT_FOUND);
         }
+
+        if (getuser.get().getPasswordRecoveryToken() != null) {
+
+            return new ResponseEntity<>("Password recovery token already sent", HttpStatus.BAD_REQUEST);
+        }
+
         var currentuser = getuser.get();
         String generatedtoken = UUID.randomUUID().toString();
-
-        emailService.sendConfirmationEmail(currentuser.getEmail(), generatedtoken);
         var token = PasswordRecoveryToken.builder()
                 .token(generatedtoken)
                 .createdAt(LocalDateTime.now())
@@ -348,6 +398,16 @@ public class UserService {
     public ResponseEntity<jwtDto> Login(AuthenticationManager authenticationManager, Logindto logindto) {
 
         try {
+
+
+            var getuser = userRepository.findByEmail(logindto.getEmail());
+            if (getuser.isPresent()) {
+                if (!getuser.get().isApprovedByAdmin) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                }
+            }
+
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
 
@@ -359,15 +419,46 @@ public class UserService {
 
                 jwtFactory = new JwtFactory();
 
-            var token =jwtFactory.generateToken(userDetails.get());
-            var dto=new jwtDto(token,userDetails.get().getRole().toString());
-             return ResponseEntity.ok(dto);
+                var token = jwtFactory.generateToken(userDetails.get());
+                var dto = new jwtDto(token, userDetails.get().getRole().toString());
+                return ResponseEntity.ok(dto);
             }
         } catch (Exception e) {
             System.out.println("Authentication failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+
+    }
+
+
+    public int RetriaveLogedUserId(Authentication authentication) {
+
+
+        if (authentication.getName() != null) {
+            var user = userRepository.findByEmail(authentication.getName());
+
+            if (user.isPresent()) {
+                return user.get().getId();
+            }
+
+        }
+
+        return 0;
+    }
+
+
+    public ResponseEntity<isAdminDto> CheckifAdmin(Authentication authentication) {
+        var getusr = userRepository.findByEmail(authentication.getName());
+        if (getusr.isPresent()) {
+            if (getusr.get().getRole().equals(UserRoleEnum.ADMIN)) {
+                return new ResponseEntity(new isAdminDto(true), HttpStatus.OK);
+            }
+
+            return new ResponseEntity<>(new isAdminDto(false), HttpStatus.OK);
+
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 
     }
 

@@ -8,6 +8,7 @@ import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,50 +28,39 @@ public class SellerController {
     private CommentService commentService;
 
 
-
     @GetMapping("/games")
-    public List<GameObjectDto> MyGames(Authentication authentication) throws Exception {
-        if(authentication.getName()!=null) {
-            var user = userRepository.findByEmail(authentication.getName());
+    public ResponseEntity<List<GameObjectDto>> MyGames(Authentication authentication) throws Exception {
 
-            return   gameObjectService.getGameObjectsBySellerId(user.get().getId());
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+
+            return gameObjectService.getGameObjectsBySellerId(currentUserId);
         }
+
         return null;
 
 
-   }
+    }
 
-   @GetMapping("/reviews")
-   public List<UserReviewsDto> MyReviews(Authentication authentication) throws Exception {
-
-
-       if(authentication.getName()!=null) {
-           var user = userRepository.findByEmail(authentication.getName());
-
-           return commentService.getApprovedReviewsBySellerId(user.get().getId());
-       }
-
-      return null;
+    @GetMapping("/reviews")
+    public ResponseEntity<List<UserReviewsDto>> MyReviews(Authentication authentication) throws Exception {
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+            return commentService.getApprovedReviewsBySellerId(currentUserId);
+        }
+        return new ResponseEntity<>( HttpStatus.BAD_REQUEST);
 
 
-   }
+    }
 
-   @GetMapping("/info")
-   public ResponseEntity<UserInfoDto> currenlysignedUserInfo(Authentication authentication)   {
-       if(authentication.getName()!=null) {
-           var user = userRepository.findByEmail(authentication.getName());
-
-
-           return userService.GetUserInfoById(user.get().getId());
-       }
-       return null;
-
-
-   }
-
-
-
-
+    @GetMapping("/info")
+    public ResponseEntity<UserInfoDto> currenlysignedUserInfo(Authentication authentication) {
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+            return userService.GetUserInfoById(currentUserId );
+        }
+        return null;
+    }
 
 
 }

@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -104,21 +105,20 @@ public class CommentService {
     }
 
 
-    public List<UserReviewsDto> getApprovedReviewsBySellerId(int sellerId) throws Exception {
+    public ResponseEntity<List<UserReviewsDto>> getApprovedReviewsBySellerId(int sellerId) {
+        var seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
+        var reviews = commentRepository.sellersAllApprovedReviews(sellerId);
 
-        var findSeller = userRepository.findById(sellerId);
-
-        if (findSeller.isEmpty()) {
-
-            throw new Exception("Seller  not found");
-
+        if (reviews.isEmpty()) {
+            return ResponseEntity.noContent().build();
         }
-        var Reviews = commentRepository.sellersAllApprovedReviews(sellerId);
-        return Reviews.stream().map(UserReviewsDto::toDto).toList();
 
-
+        var reviewDtos = reviews.stream().map(UserReviewsDto::toDto).toList();
+        return ResponseEntity.ok(reviewDtos);
     }
+
 
 
     public List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception {

@@ -23,7 +23,7 @@ public class MainController {
     private EmailService emailService;
     private GameObjectService gameObjectService;
     private CommentService commentService;
-    @GetMapping("/topselelrs")
+    @GetMapping("/topselers")
     public ResponseEntity<List<UserInfoDto>> topRatedSelelrs() {
 
         return userService.getTopRatedSellers();

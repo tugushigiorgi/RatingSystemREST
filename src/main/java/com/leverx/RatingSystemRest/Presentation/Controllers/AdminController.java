@@ -46,7 +46,7 @@ public class AdminController {
 
     @PostMapping("/comments/approve/{id}")
     public ResponseEntity<String> approveReviewRequest(@PathVariable int id) {
-
+        System.out.println("Approving Review Request");
 
         return commentService.ApproveUserReview(id);
     }

@@ -1,6 +1,7 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 import com.leverx.RatingSystemRest.Business.Service.GameObjectService;
+import com.leverx.RatingSystemRest.Business.Service.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.UpdateGameObject;
@@ -21,23 +22,19 @@ public class GameController {
 
     private GameObjectService gameObjectService;
     private UserRepository userRepository;
+    private UserService userService;
 
     @PostMapping
     public ResponseEntity<String> addGame(
             @ModelAttribute addGameObjectDto dto,
             @RequestParam("photo") MultipartFile photo, Authentication authentication) {
 
-
-
-        if(authentication.getName()!=null) {
-            var user = userRepository.findByEmail(authentication.getName());
-
-            return gameObjectService.add(dto,photo,user.get().getId());
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+            return gameObjectService.add(dto,photo,currentUserId );
         }
 
-    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-
-
+          return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 
     }
 
@@ -45,11 +42,10 @@ public class GameController {
     @DeleteMapping("{id}")
     public ResponseEntity<String> deleteGame(@PathVariable int id,Authentication authentication) {
 
-        if(authentication.getName()!=null) {
-            var user = userRepository.findByEmail(authentication.getName());
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
 
-
-        return gameObjectService.remove(id,user.get().getId());
+        return gameObjectService.remove(id, currentUserId );
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
@@ -57,13 +53,9 @@ public class GameController {
 
     @PutMapping("detailed")
     public ResponseEntity<String> updateGameWithPhoto(  @ModelAttribute UpdateGameObject dto, @RequestParam("photo") MultipartFile photo,Authentication authentication) {
-
-
-        //TODO CURRENT LOGGED USER ID PASS
-
-        if(authentication.getName()!=null) {
-            var user = userRepository.findByEmail(authentication.getName());
-            return gameObjectService.update(dto,photo,user.get().getId());
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+            return gameObjectService.update(dto,photo,currentUserId);
 
         }
 
@@ -75,9 +67,9 @@ public class GameController {
 
     @PutMapping()
     public ResponseEntity<String> updateGameWithPhoto(  @ModelAttribute UpdateGameObject dto,Authentication authentication) {
-        if(authentication.getName()!=null) {
-            var user = userRepository.findByEmail(authentication.getName());
-            return gameObjectService.update(dto,null,user.get().getId());
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+            return gameObjectService.update(dto,null,currentUserId);
 
         }
 
@@ -89,15 +81,7 @@ public class GameController {
 
 
 
-    @GetMapping("/{sellerId}")
-    public List<GameObjectDto> getSellerGames(@PathVariable int sellerId) throws Exception {
 
-
-
-
-        return gameObjectService.getGameObjectsBySellerId(sellerId);
-
-    }
 
 
 

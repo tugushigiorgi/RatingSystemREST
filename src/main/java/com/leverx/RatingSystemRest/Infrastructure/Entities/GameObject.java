@@ -35,7 +35,7 @@ public class GameObject {
     @Column(insertable = false)
     private LocalDateTime updated_at;
 
-    //relationships
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "user_id")

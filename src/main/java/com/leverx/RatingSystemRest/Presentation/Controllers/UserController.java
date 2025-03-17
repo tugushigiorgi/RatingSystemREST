@@ -3,14 +3,12 @@ package com.leverx.RatingSystemRest.Presentation.Controllers;
 import com.leverx.RatingSystemRest.Business.Service.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.isAdminDto;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @AllArgsConstructor
@@ -19,24 +17,21 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserService userService;
+
     @PutMapping("/password")
-    public ResponseEntity<String> ChangePassword(@RequestBody  ChangePasswordDto dto, Authentication authentication) {
+    public ResponseEntity<String> ChangePassword(@RequestBody ChangePasswordDto dto, Authentication authentication) {
 
-        if(authentication.getName()!=null) {
-            var user = userRepository.findByEmail(authentication.getName());
-
-
-            return userService.ChangePassword(user.get().getId(),dto);
+        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        if (currentUserId != 0) {
+            return userService.ChangePassword(currentUserId, dto);
         }
-       return  new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
     }
 
-
-
-
-
-
-
+    @GetMapping("/verifyrole")
+    public ResponseEntity<isAdminDto> isAdmin(Authentication authentication) {
+        return userService.CheckifAdmin(authentication);
+    }
 
 
 }

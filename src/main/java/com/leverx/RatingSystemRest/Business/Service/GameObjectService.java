@@ -47,33 +47,37 @@ public class GameObjectService {
     }
 
     public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId) {
-        var getcurrentUser = userRepository.findById(userId);
-        if (getcurrentUser.isPresent()) {
-            var currentUser = getcurrentUser.get();
+        var getCurrentUser = userRepository.findById(userId);
 
-            var savepicture = saveNewPictureOnLocalFolder(userId, photo);
-            if (savepicture != null) {
-                var gameObject = GameObject.builder()
-                        .price(dto.getPrice())
-                        .title(dto.getTitle())
-                        .text(dto.getText())
-                        .user(currentUser)
-                        .created_at(LocalDateTime.now())
-                        .picture(savepicture).build();
-
-                savepicture.setGameObject(gameObject);
-
-                gameObjectRepository.save(gameObject);
-
-                return new ResponseEntity<>("new object added succesfully", HttpStatus.OK);
-
-            }
-
+        if (getCurrentUser.isEmpty()) {
+            return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
 
+        if (photo == null || photo.isEmpty()) {
+            return new ResponseEntity<>("Photo file is required.", HttpStatus.BAD_REQUEST);
+        }
 
+        var currentUser = getCurrentUser.get();
+        var savedPicture = saveNewPictureOnLocalFolder(userId, photo);
+
+        if (savedPicture == null) {
+            return new ResponseEntity<>("Failed to save picture.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        var gameObject = GameObject.builder()
+                .price(dto.getPrice())
+                .title(dto.getTitle())
+                .text(dto.getText())
+                .user(currentUser)
+                .created_at(LocalDateTime.now())
+                .picture(savedPicture)
+                .build();
+        savedPicture.setGameObject(gameObject);
+        gameObjectRepository.save(gameObject);
+
+        return new ResponseEntity<>("New object added successfully!", HttpStatus.OK);
     }
+
 
     @Transactional
     public ResponseEntity<String> remove(int gameObjectId, int userId) {
@@ -215,18 +219,21 @@ public class GameObjectService {
     }
 
 
-    public List<GameObjectDto> getGameObjectsBySellerId(int sellerId) throws Exception {
+    public ResponseEntity<List<GameObjectDto>> getGameObjectsBySellerId(int sellerId) throws Exception {
 
         var getUser = userRepository.findById(sellerId);
         if (getUser.isEmpty()) {
 
-            throw new Exception("User not found");
+            return ResponseEntity.noContent().build();
+
         }
 
 
         var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
+        var toDto=getGames.stream().map(GameObjectDto::toDto).toList();
 
-        return getGames.stream().map(GameObjectDto::toDto).toList();
+        return ResponseEntity.ok( toDto);
+
     }
 
 

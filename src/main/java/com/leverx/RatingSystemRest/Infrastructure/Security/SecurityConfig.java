@@ -1,5 +1,6 @@
 package com.leverx.RatingSystemRest.Infrastructure.Security;
 
+import com.leverx.RatingSystemRest.Infrastructure.Entities.UserRoleEnum;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;

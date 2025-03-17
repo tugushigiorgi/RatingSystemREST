@@ -43,14 +43,14 @@ public class JwtFactory {
             Map<String, Object> extraClaims,
             User userDetails
     ) {
-        long jwtExpiration = 604800000;
+        long jwtExpiration = 48000000;
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
     public String generateRefreshToken(
             User userDetails
     ) {
-        long refreshExpiration = 60480000;
+        long refreshExpiration = 48000000;
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
     }
 
