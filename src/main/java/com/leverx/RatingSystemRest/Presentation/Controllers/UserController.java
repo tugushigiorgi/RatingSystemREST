@@ -4,6 +4,7 @@ import com.leverx.RatingSystemRest.Business.Service.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.isAdminDto;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class UserController {
     private final UserService userService;
 
     @PutMapping("/password")
-    public ResponseEntity<String> ChangePassword(@RequestBody ChangePasswordDto dto, Authentication authentication) {
+    public ResponseEntity<String> ChangePassword(@Valid @RequestBody ChangePasswordDto dto, Authentication authentication) {
 
         var currentUserId = userService.RetriaveLogedUserId(authentication);
         if (currentUserId != 0) {

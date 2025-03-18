@@ -6,6 +6,7 @@ import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.jwtDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.Logindto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.RegisterUserDto;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,18 +30,12 @@ public class AuthController {
 
 
     }
-
     @PostMapping("/login")
-    public ResponseEntity<jwtDto> Login(@RequestBody Logindto loginDTO ) throws InternalAuthenticationServiceException {
+    public ResponseEntity<jwtDto> Login(@Valid @RequestBody Logindto loginDTO ) throws InternalAuthenticationServiceException {
 
         return  userService.Login(authenticationManager, loginDTO);
 
     }
-
-
-
-
-
     @PostMapping("/recovercode/{email}")
     public ResponseEntity<String> PasswordRecoverCodeSend(@PathVariable String email){
 
@@ -48,32 +43,18 @@ public class AuthController {
 
     }
 
-
     @PostMapping("/updatepassword")
-    public ResponseEntity<String> ChangePassword(@RequestBody RecoverPasswordDto dto){
+    public ResponseEntity<String> ChangePassword( @Valid @RequestBody RecoverPasswordDto dto){
 
             return  userService.updatePassword(dto);
 
     }
-
-
-
-
-
     @PostMapping("/verify/{code}")
     public ResponseEntity<String> verifyEmailCode(@PathVariable String code){
 
         return userService.ActivateAccount(code);
 
     }
-
-
-
-
-
-
-
-
     @PostMapping("/logout")
     public  ResponseEntity<String> Logout( HttpServletRequest request){
 
@@ -86,18 +67,7 @@ public class AuthController {
             System.out.println(e);
              return new ResponseEntity<>("Logged out failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-
-
     }
-
-
-
-
-
-
-
-
 
 
 

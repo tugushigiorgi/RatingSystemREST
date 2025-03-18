@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,17 +33,16 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @Service
-
 public class UserService {
     private final UserRepository userRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
-    private PasswordEncoder passwordEncoder;
-    private UserPhotoRepository userPhotoRepository;
-    private EmailService emailService;
-    private TokenRepository tokenRepository;
-    private passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserPhotoRepository userPhotoRepository;
+    private final EmailService emailService;
+    private final TokenRepository tokenRepository;
+    private final passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
     private JwtFactory jwtFactory;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailService emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository, JwtFactory jwtFactory) {
@@ -55,65 +55,67 @@ public class UserService {
         this.jwtFactory = jwtFactory;
     }
 
-    public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
-        return userRepository.notApprovedSellersList().stream().map(AdminNotApprovedUserDto::toDto).toList();
+    public ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests() {
+
+        var getlist = userRepository.notApprovedSellersList();
+        if (getlist == null || getlist.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        var mapToDtoList = getlist.stream().map(AdminNotApprovedUserDto::toDto).toList();
+        return new ResponseEntity<>(mapToDtoList, HttpStatus.OK);
 
     }
 
     public ResponseEntity<String> AcceptSellerRegistrationRequest(int sellerId) {
-        var getSeller = userRepository.findById(sellerId);
-        if (getSeller.isEmpty()) {
-            return new ResponseEntity<>("seller not found", HttpStatus.NOT_FOUND);
-        }
+        var currentSeller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
 
-        var currentSeller = getSeller.get();
+        if (!currentSeller.isHasVerifiedEmail()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         currentSeller.setApprovedByAdmin(true);
         userRepository.save(currentSeller);
 
-        return new ResponseEntity<>("admin approved", HttpStatus.OK);
+        return new ResponseEntity<>("Successfully approved seller registration request", HttpStatus.OK);
     }
 
 
-    public List<DetailedUserDto> DetailedRegisteredUsers() {
+    public ResponseEntity<List<DetailedUserDto>> DetailedRegisteredUsers() {
         var users = userRepository.ApprovedSellersList();
 
-
-        return users.stream().map(user -> DetailedUserDto.toDetailedUserDto(user)).toList();
-
-
+        if (users == null || users.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        var toDtoList = users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
+        return new ResponseEntity<>(toDtoList, HttpStatus.OK);
     }
 
 
-    public List<DetailedUserDto> GetDetailedRegisteredUsersByUsername(String username) {
+    public ResponseEntity<List<DetailedUserDto>> GetDetailedRegisteredUsersByUsername(String username) {
         var users = userRepository.GetRegisteredSellerByUsername(username);
         if (users.isEmpty()) {
-            return new ArrayList<>();
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
-
-
+        var toDtoList = users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
+        return new ResponseEntity<>(toDtoList, HttpStatus.OK);
     }
 
     @Transactional
     public ResponseEntity<String> DeleteById(int userId) {
 
-        var user = userRepository.findById(userId);
-        if (user.isEmpty()) {
-            return new ResponseEntity<>("user not found", HttpStatus.NOT_FOUND);
-        }
-        deleteUserFolderByUrl(uploadDir+ File.separator+userId);
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
+
+        deleteUserFolderByUrl(uploadDir + File.separator + userId);
         userRepository.deleteById(userId);
 
         return new ResponseEntity<>("user deleted", HttpStatus.OK);
-
-
     }
 
 
     private boolean deleteUserFolderByUrl(String folderUrl) {
         try {
             Path folderPath = Paths.get(folderUrl);
-
             if (!Files.exists(folderPath)) {
                 System.out.println("Folder does not exist: " + folderUrl);
                 return false;
@@ -146,28 +148,18 @@ public class UserService {
 
 
     public ResponseEntity<UserInfoDto> GetUserInfoById(int userId) {
-
-        var getuser = userRepository.findById(userId);
-        if (getuser.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        var toDto = UserInfoDto.toDto(getuser.get());
-
+        var getuser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+        var toDto = UserInfoDto.toDto(getuser);
         return new ResponseEntity<>(toDto, HttpStatus.OK);
-
-
     }
 
 
     public ResponseEntity<String> ChangePassword(int currentuserId, ChangePasswordDto dto) {
 
-        var getuser = userRepository.findById(currentuserId).get();
+        var getuser = userRepository.findById(currentuserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
 
-        if (dto.oldPassword.length() < 6 || dto.newPassword.length() < 6 || dto.repeatPassword.length() < 6) {
-            return new ResponseEntity<>("Passwords should contain at least 6 characters ", HttpStatus.BAD_REQUEST);
-
-
-        }
 
         if (!Objects.equals(dto.newPassword, dto.repeatPassword)) {
             return new ResponseEntity<>("new and repeat passwords does not match", HttpStatus.BAD_REQUEST);
@@ -192,40 +184,46 @@ public class UserService {
 
     public ResponseEntity<List<UserInfoDto>> getTopRatedSellers() {
 
-        return new ResponseEntity<>(userRepository.findTop5RatedSellers().stream().map(UserInfoDto::toDto).toList(), HttpStatus.OK);
+        var getlist = userRepository.findTop5RatedSellers();
+
+        if (getlist == null || getlist.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        var toDtoList = getlist.stream().map(UserInfoDto::toDto).toList();
+        return new ResponseEntity<>(toDtoList, HttpStatus.OK);
 
     }
 
 
     public ResponseEntity<SellerProfileDto> GetSellerProfileById(int userId) {
 
-        var getuser = userRepository.findById(userId);
-        if (getuser.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        var currentSeller = getuser.get();
-
+        var currentSeller = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
         var info = UserInfoDto.toDto(currentSeller);
-        var gameList = currentSeller.getGameObjects().stream().map(GameObjectDto::toDto).toList();
+
+        var gameList = currentSeller.getGameObjects();
+
+        if (gameList == null || gameList.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        var toDtoGameList = gameList.stream().map(GameObjectDto::toDto).toList();
+
 
         return new ResponseEntity<>(SellerProfileDto.builder()
                 .userInfo(info)
-                .gameObjects(gameList).build(), HttpStatus.OK);
+                .gameObjects(toDtoGameList).build(), HttpStatus.OK);
 
     }
 
 
     public ResponseEntity<String> registerUser(RegisterUserDto dto, MultipartFile photo) {
 
-        if (dto.email.isEmpty() || dto.password.isEmpty() || dto.name.isEmpty() || dto.surname.isEmpty()) {
-            return new ResponseEntity<>("Please fill all fields", HttpStatus.BAD_REQUEST);
-        }
+
         var checkifExists = userRepository.findByEmail(dto.email);
+
         if (checkifExists.isPresent()) {
-            return new ResponseEntity<>("email already in use", HttpStatus.CONFLICT);
+            return new ResponseEntity<>("email already in use", HttpStatus.BAD_REQUEST);
         }
-
-
         var createUser = User.builder()
                 .created_at(LocalDateTime.now())
                 .first_name(dto.name)
@@ -233,7 +231,6 @@ public class UserService {
                 .email(dto.email)
                 .password(passwordEncoder.encode(dto.password))
                 .isApprovedByAdmin(false)
-
                 .role(UserRoleEnum.SELLER)
                 .HasVerifiedEmail(false)
                 .build();
@@ -398,43 +395,28 @@ public class UserService {
     public ResponseEntity<jwtDto> Login(AuthenticationManager authenticationManager, Logindto logindto) {
 
         try {
-
-
             var getuser = userRepository.findByEmail(logindto.getEmail());
             if (getuser.isPresent()) {
                 if (!getuser.get().isApprovedByAdmin) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
             }
-
-
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
+            jwtFactory = new JwtFactory();
+            var token = jwtFactory.generateToken(getuser.get());
+            var dto = new jwtDto(token, getuser.get().getRole().toString());
+            return ResponseEntity.ok(dto);
 
-
-            Optional<User> userDetails = userRepository.findByEmail(logindto.getEmail());
-
-            if (userDetails.isPresent()) {
-
-
-                jwtFactory = new JwtFactory();
-
-                var token = jwtFactory.generateToken(userDetails.get());
-                var dto = new jwtDto(token, userDetails.get().getRole().toString());
-                return ResponseEntity.ok(dto);
-            }
         } catch (Exception e) {
             System.out.println("Authentication failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
 
     }
 
 
     public int RetriaveLogedUserId(Authentication authentication) {
-
-
         if (authentication.getName() != null) {
             var user = userRepository.findByEmail(authentication.getName());
 

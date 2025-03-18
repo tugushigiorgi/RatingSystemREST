@@ -1,12 +1,12 @@
 package com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 @Builder
 @Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class jwtDto {
     public String token;

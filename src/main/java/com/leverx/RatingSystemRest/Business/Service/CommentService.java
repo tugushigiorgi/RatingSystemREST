@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -27,30 +29,14 @@ public class CommentService {
 
     public ResponseEntity<String> add(addCommentDto dto) {
 
-        var findSeller = userRepository.findById(dto.sellerId);
-
-        if (findSeller.isEmpty()) {
-
-            return new ResponseEntity<>("seller not found", HttpStatus.BAD_REQUEST);
-
-        }
-        var currentSeller = findSeller.get();
-
-
+        var currentSeller = userRepository.findById(dto.sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
         boolean hasMatchingAnonymousId = currentSeller.getComments().stream()
                 .anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
-
-
         if (hasMatchingAnonymousId) {
             return new ResponseEntity<>("anonymous with given id  already submited review", HttpStatus.BAD_REQUEST);
         }
-
-
-
-
         var newComment = Comment.builder().Approved(false).created_at(LocalDateTime.now()).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
-
-
         currentSeller.getComments().add(newComment);
         commentRepository.save(newComment);
         userRepository.save(currentSeller);
@@ -58,14 +44,13 @@ public class CommentService {
 
 
     }
+
     @Transactional
     public ResponseEntity<String> delete(int anonymousId, int commentId) {
 
-        var findComment = commentRepository.findById(commentId);
-        if (findComment.isEmpty()) {
-            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
-        }
-        var currentComment = findComment.get();
+        var currentComment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+
 
         if (currentComment.getAnonymousId() != anonymousId) {
             return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
@@ -79,11 +64,8 @@ public class CommentService {
 
     public ResponseEntity<String> update(CommentUpdateDto dto) {
 
-        var findComment = commentRepository.findById(dto.getCommentId());
-        if (findComment.isEmpty()) {
-            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
-        }
-        var currentComment = findComment.get();
+        var currentComment = commentRepository.findById(dto.getCommentId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
 
         if (currentComment.getAnonymousId() != dto.getAnonymousId()) {
             return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
@@ -120,17 +102,10 @@ public class CommentService {
     }
 
 
-
     public List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception {
+        var seller = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
 
-
-        var findSeller = userRepository.findById(sellerId);
-
-        if (findSeller.isEmpty()) {
-
-            throw new Exception("Seller  not found");
-
-        }
         var Reviews = commentRepository.sellersNotApprovedReviews(sellerId);
         return Reviews.stream().map(UserReviewsDto::toDto).toList();
 
@@ -138,37 +113,38 @@ public class CommentService {
     }
 
 
-    public List<UserReviewsDto> getAllNotApprovedReviews() throws Exception {
-
-
-        var getdata = commentRepository.AllNotApprovedReviews();
-        return getdata.stream().map(UserReviewsDto::toDto).toList();
-
-
+    public List<UserReviewsDto> getAllNotApprovedReviews() {
+        List<Comment> notApprovedReviews = commentRepository.AllNotApprovedReviews();
+        if (notApprovedReviews == null || notApprovedReviews.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return notApprovedReviews.stream()
+                .map(UserReviewsDto::toDto)
+                .collect(Collectors.toList());
     }
-
 
     public ResponseEntity<String> ApproveUserReview(int commentId) {
 
 
-        var getcomment = commentRepository.findById(commentId);
-        if (getcomment.isEmpty()) {
-            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
-        }
-        var currentSeller=userRepository.findById(getcomment.get().getUser().getId()).get();
+        var getcomment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+
+        var currentSeller = userRepository.findById(getcomment.getUser().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+
 
         var userTotalApprovedComments = currentSeller.getComments().stream().filter(Comment::isApproved).toList();
 
         var CurrentRatingCount = userTotalApprovedComments.size();
         var CurrentRatingSum = SumCurrentRating(userTotalApprovedComments);
 
-        var NewRating= (CurrentRatingSum+getcomment.get().getRating())/(CurrentRatingCount+1);
+        var NewRating = (CurrentRatingSum + getcomment.getRating()) / (CurrentRatingCount + 1);
         currentSeller.setTotalRating(NewRating);
 
         userRepository.save(currentSeller);
-        var currentComment = getcomment.get();
-        currentComment.setApproved(true);
-        commentRepository.save(currentComment);
+
+        getcomment.setApproved(true);
+        commentRepository.save(getcomment);
         return new ResponseEntity<>("Comment Approved", HttpStatus.OK);
 
 
@@ -176,18 +152,11 @@ public class CommentService {
 
     @Transactional
     public ResponseEntity<String> DeclineUserReview(int commentId) {
-
-
-        var getcomment = commentRepository.findById(commentId);
-        if (getcomment.isEmpty()) {
-            return new ResponseEntity<>("Comment not found", HttpStatus.BAD_REQUEST);
-        }
-
+        var getcomment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment not found"));
 
         commentRepository.deleteById(commentId);
         return new ResponseEntity<>("Comment Deleted", HttpStatus.OK);
-
-
     }
 
 
@@ -195,8 +164,6 @@ public class CommentService {
         return comment.stream()
                 .mapToInt(Comment::getRating)
                 .sum();
-
-
     }
 
 

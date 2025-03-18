@@ -21,12 +21,8 @@ public class AdminController {
     private CommentService commentService;
 
     @GetMapping("/users/requests")
-    public List<AdminNotApprovedUserDto> RegistrationRequestsList() {
-
-
+    public ResponseEntity<List<AdminNotApprovedUserDto>> RegistrationRequestsList() {
         return userService.getSellersRegistrationRequests();
-
-
     }
 
 
@@ -60,24 +56,23 @@ public class AdminController {
 
 
     @GetMapping("/user/registeredusers")
-    public List<DetailedUserDto> getDetailedRegisteredUserList() {
+    public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUserList() {
 
         return userService.DetailedRegisteredUsers();
 
     }
 
     @GetMapping("/user/registeredusers/{username}")
-    public List<DetailedUserDto> getDetailedRegisteredUserListByUsername(  @PathVariable String username) {
+    public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUserListByUsername(@PathVariable String username) {
 
         return userService.GetDetailedRegisteredUsersByUsername(username);
 
     }
 
     @DeleteMapping("/user/{id}")
-    public ResponseEntity<String> DeleteSellerById( @PathVariable int  id) {
-     return   userService.DeleteById(id);
+    public ResponseEntity<String> DeleteSellerById(@PathVariable int id) {
+        return userService.DeleteById(id);
     }
-
 
 
 }

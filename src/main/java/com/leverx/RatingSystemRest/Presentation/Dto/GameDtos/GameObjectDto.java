@@ -1,30 +1,24 @@
 package com.leverx.RatingSystemRest.Presentation.Dto.GameDtos;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.format.DateTimeFormatter;
 
 @Builder
-
-
+@Getter
+@Setter
 public class GameObjectDto {
-
 
     public int id;
     public String publishDate;
-
     public String title;
-
     public String text;
-
     public double price;
-
     public String pictureUrl;
-
     public int sellerId;
     public String sellerFullName;
-
     public String sellerPictureUrl;
 
 
@@ -44,8 +38,6 @@ public class GameObjectDto {
 
 
     }
-
-
 
 
 }

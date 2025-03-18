@@ -1,7 +1,9 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 import com.leverx.RatingSystemRest.Business.Service.CommentService;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,14 +17,6 @@ public class CommentController {
         public CommentController(CommentService commentService) {
             this.commentService = commentService;
         }
-
-
-
-
-
-
-
-
 
 
 

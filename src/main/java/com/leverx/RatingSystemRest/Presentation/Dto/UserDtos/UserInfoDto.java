@@ -2,10 +2,14 @@ package com.leverx.RatingSystemRest.Presentation.Dto.UserDtos;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.format.DateTimeFormatter;
 
 @Builder
+@Getter
+@Setter
 public class UserInfoDto {
 
     public int id;

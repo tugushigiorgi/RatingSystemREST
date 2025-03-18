@@ -19,7 +19,7 @@ public class PasswordRecoveryToken {
 
     @Id
     @GeneratedValue
-    private Integer id; // More secure than Integer
+    private Integer id;
 
     @Column(nullable = false, unique = true, updatable = false)
     private String token;
@@ -30,7 +30,6 @@ public class PasswordRecoveryToken {
 
     @Column(nullable = false)
     private LocalDateTime expiresAt;
-
 
     @JsonIgnore
     @OneToOne

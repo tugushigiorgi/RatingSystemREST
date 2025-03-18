@@ -5,10 +5,12 @@ import com.leverx.RatingSystemRest.Business.Service.CommentService;
 import com.leverx.RatingSystemRest.Business.Service.EmailService;
 import com.leverx.RatingSystemRest.Business.Service.GameObjectService;
 import com.leverx.RatingSystemRest.Business.Service.UserService;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,12 +49,15 @@ public class MainController {
     }
 
     @PostMapping("/addcomment")
-    public ResponseEntity<String> add(@RequestBody addCommentDto dto ){
+    public ResponseEntity<String> add( @Valid @RequestBody addCommentDto dto ){
 
         return commentService.add(dto);
     }
 
-
+    @PutMapping("/comment")
+    public ResponseEntity<String> updateComment( @Valid @RequestBody CommentUpdateDto dto ){
+        return  commentService.update(dto);
+    }
 
 
 }

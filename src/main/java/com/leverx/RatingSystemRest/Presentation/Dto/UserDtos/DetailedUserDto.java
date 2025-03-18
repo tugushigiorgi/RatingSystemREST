@@ -12,6 +12,8 @@ import java.util.List;
 
 @Builder
 @Data
+@Getter
+@Setter
 public class DetailedUserDto {
 
     private int id;

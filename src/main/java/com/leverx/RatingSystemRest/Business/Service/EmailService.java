@@ -30,10 +30,9 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
             helper.setTo(to);
             helper.setSubject("LeverX Rating System Confirmation Email");
-            helper.setText("Confirmation Code "+Token, true);
+            helper.setText("Confirmation Code " + Token, true);
 
             mailSender.send(message);
 
@@ -43,15 +42,13 @@ public class EmailService {
     }
 
 
-    public void sendRecoverLink(String email,String Token) {
+    public void sendRecoverLink(String email, String Token) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
             helper.setTo(email);
             helper.setSubject("LeverX Recover Link");
-            helper.setText(frontendPath+"reset"+"?token=" + Token);
-
+            helper.setText(frontendPath + "reset" + "?token=" + Token);
             mailSender.send(message);
 
         } catch (MessagingException e) {

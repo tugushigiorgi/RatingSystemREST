@@ -18,17 +18,14 @@ public class GameObjectPicture {
     @Id
     @GeneratedValue
     private Integer id;
-
+    @Column(nullable = false)
     private String photoName;
-
+    @Column(nullable = false)
     private String Url ;
-
+    @Column(nullable = false)
     private String Extension;
-
+    @Column(nullable = false)
     private float size ;
-
-
-
     @JsonIgnore
     @OneToOne
     @JoinColumn(name = "gameobject_id")

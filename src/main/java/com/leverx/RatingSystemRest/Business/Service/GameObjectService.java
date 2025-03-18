@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 
 import java.io.File;
@@ -25,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Data
@@ -39,7 +42,7 @@ public class GameObjectService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository,GameObjectPictureRepository gameObjectPictureRepository) {
+    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository, GameObjectPictureRepository gameObjectPictureRepository) {
         this.gameObjectRepository = gameObjectRepository;
         this.userRepository = userRepository;
         this.userPhotoRepository = userPhotoRepository;
@@ -47,23 +50,12 @@ public class GameObjectService {
     }
 
     public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId) {
-        var getCurrentUser = userRepository.findById(userId);
-
-        if (getCurrentUser.isEmpty()) {
-            return new ResponseEntity<>("User not found", HttpStatus.BAD_REQUEST);
-        }
-
-        if (photo == null || photo.isEmpty()) {
-            return new ResponseEntity<>("Photo file is required.", HttpStatus.BAD_REQUEST);
-        }
-
-        var currentUser = getCurrentUser.get();
+        var currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
         var savedPicture = saveNewPictureOnLocalFolder(userId, photo);
-
         if (savedPicture == null) {
             return new ResponseEntity<>("Failed to save picture.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
         var gameObject = GameObject.builder()
                 .price(dto.getPrice())
                 .title(dto.getTitle())
@@ -82,17 +74,13 @@ public class GameObjectService {
     @Transactional
     public ResponseEntity<String> remove(int gameObjectId, int userId) {
 
-        var getcurrentUser = userRepository.findById(userId);
-        var getcurrentGameObject = gameObjectRepository.findById(gameObjectId);
-        if (getcurrentUser.isEmpty() || getcurrentGameObject.isEmpty()) {
+        var getcurrentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
 
-            return new ResponseEntity<>("User/Game not found", HttpStatus.BAD_REQUEST);
+        var currentObject = gameObjectRepository.findById(gameObjectId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "GameObject   not found"));
 
-        }
-
-        var currentObject = getcurrentGameObject.get();
-
-        if (currentObject.getUser().getId() != currentObject.getUser().getId()) {
+        if (!Objects.equals(currentObject.getUser().getId(), currentObject.getUser().getId())) {
 
             return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
         }
@@ -101,7 +89,7 @@ public class GameObjectService {
             gameObjectRepository.delete(currentObject);
             Path path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
             Files.delete(path);
-            return new ResponseEntity<>("Succesfully deleted with id" + gameObjectId, HttpStatus.OK);
+            return new ResponseEntity<>("Successfully deleted with id" + gameObjectId, HttpStatus.OK);
 
         } catch (Exception e) {
             return new ResponseEntity<>("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -114,15 +102,13 @@ public class GameObjectService {
 
     public ResponseEntity<String> update(UpdateGameObject dto, MultipartFile photo, int userId) {
 
-        var getcurrentUser = userRepository.findById(userId);
-        var getcurrentGameObject = gameObjectRepository.findById(dto.getId());
-        if (getcurrentUser.isEmpty() || getcurrentGameObject.isEmpty()) {
+        var currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
 
-            return new ResponseEntity<>("User/Game not found", HttpStatus.BAD_REQUEST);
+        var currentObject = gameObjectRepository.findById(dto.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "GameObject not found"));
 
-        }
-        var currentUser = getcurrentUser.get();
-        var currentObject = getcurrentGameObject.get();
+
         if (currentObject.getUser().getId() != currentObject.getUser().getId()) {
 
             return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
@@ -139,24 +125,17 @@ public class GameObjectService {
             currentObject.setText(dto.getText());
         }
         if (photo != null) {
-
-
             var updatePicture = UpdatePictureOnLocalFolder(currentObject.getPicture().getUrl(), userId, photo);
             if (updatePicture != null) {
-
-
                 currentObject.setPicture(updatePicture);
                 currentObject.setUpdated_at(LocalDateTime.now());
                 updatePicture.setGameObject(currentObject);
                 gameObjectPictureRepository.delete(currentObject.getPicture());
                 gameObjectRepository.save(currentObject);
                 gameObjectPictureRepository.save(updatePicture);
-
-
                 return new ResponseEntity<>("object updated succesfully", HttpStatus.OK);
 
             }
-
 
 
         }
@@ -164,22 +143,16 @@ public class GameObjectService {
         gameObjectRepository.save(currentObject);
 
 
-
-        return new ResponseEntity<>("object updated succesfully", HttpStatus.OK);
+        return new ResponseEntity<>("Game object updated successfully", HttpStatus.OK);
 
     }
 
 
     private GameObjectPicture UpdatePictureOnLocalFolder(String CurrentFileUrl, int userid, MultipartFile file) {
-
-
         try {
             Path path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
             Files.delete(path);
-
             return saveNewPictureOnLocalFolder(userid, file);
-
-
         } catch (IOException e) {
             return null;
         }
@@ -190,7 +163,6 @@ public class GameObjectService {
 
     private GameObjectPicture saveNewPictureOnLocalFolder(int userid, MultipartFile picture) {
         String userFolderPath = uploadDir + File.separator + userid + File.separator + "GAMES";
-
 
         File userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
@@ -221,30 +193,31 @@ public class GameObjectService {
 
     public ResponseEntity<List<GameObjectDto>> getGameObjectsBySellerId(int sellerId) throws Exception {
 
-        var getUser = userRepository.findById(sellerId);
-        if (getUser.isEmpty()) {
-
-            return ResponseEntity.noContent().build();
-
-        }
-
+        var getUser = userRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
 
         var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
-        var toDto=getGames.stream().map(GameObjectDto::toDto).toList();
 
-        return ResponseEntity.ok( toDto);
+        if (getGames == null || getGames.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        var toDto = getGames.stream().map(GameObjectDto::toDto).toList();
+        return ResponseEntity.ok(toDto);
 
     }
 
 
-
-    public ResponseEntity<List<GameObjectDto>> searchGameObjects(int sellerRating,String title){
+    public ResponseEntity<List<GameObjectDto>> searchGameObjects(int sellerRating, String title) {
         List<GameObject> data;
 
         if (title == null || title.isBlank()) {
             data = gameObjectRepository.filterBySellerRating(sellerRating);
         } else {
             data = gameObjectRepository.filterByTitleAndRating(title, sellerRating);
+        }
+
+        if (data== null || data.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
 
         List<GameObjectDto> dtoList = data.stream()
@@ -254,11 +227,7 @@ public class GameObjectService {
         return ResponseEntity.ok(dtoList);
 
 
-
-
-
     }
-
 
 
 }

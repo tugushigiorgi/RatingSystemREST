@@ -2,6 +2,9 @@ package com.leverx.RatingSystemRest.Infrastructure.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -9,11 +12,11 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
-
 @AllArgsConstructor
-@Data
+@Builder
 public class GameObject {
 
 
@@ -21,10 +24,14 @@ public class GameObject {
     @GeneratedValue
     private Integer id;
 
+
+    @Column(nullable = false, length = 100)
     public String title;
 
-    public String text;
+     @Column(nullable = false, length = 1000)
+     public String text;
 
+    @Column(nullable = false)
     public double price;
 
 
