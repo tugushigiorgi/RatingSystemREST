@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class PasswordRecoveryToken {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
     @Column(nullable = false, unique = true, updatable = false)

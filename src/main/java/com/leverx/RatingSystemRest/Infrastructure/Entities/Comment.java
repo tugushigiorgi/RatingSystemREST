@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 public class Comment {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
     @Column(nullable = false)
@@ -33,7 +33,7 @@ public class Comment {
     @Column(nullable = false, updatable = false)
     private LocalDateTime created_at;
 
-    private boolean Approved = false;
+    private boolean approved = false;
 
     @Column(nullable = false)
     private int rating;

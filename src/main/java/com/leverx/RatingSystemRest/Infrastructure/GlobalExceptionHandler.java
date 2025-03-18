@@ -3,6 +3,7 @@ package com.leverx.RatingSystemRest.Infrastructure;
 
 import jakarta.mail.MessagingException;
 import lombok.*;
+import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +66,11 @@ public class GlobalExceptionHandler {
     }
 
 
-
+    @ExceptionHandler(SQLException.class)
+    public ResponseEntity<String>  SqlExceptionHelperExceptionException(SQLException ex ) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body( ex.getMessage());
+    }
 
 
 }
