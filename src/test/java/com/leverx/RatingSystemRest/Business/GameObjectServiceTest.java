@@ -1,6 +1,5 @@
-package com.leverx.RatingSystemRest.Business.Service;
+package com.leverx.RatingSystemRest.Business;
 
-import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;

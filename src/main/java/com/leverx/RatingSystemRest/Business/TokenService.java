@@ -1,4 +1,4 @@
-package com.leverx.RatingSystemRest.Business.Service;
+package com.leverx.RatingSystemRest.Business;
 
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.TokenRepository;
 import lombok.AllArgsConstructor;

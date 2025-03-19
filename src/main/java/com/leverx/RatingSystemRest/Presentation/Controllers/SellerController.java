@@ -1,8 +1,8 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
-import com.leverx.RatingSystemRest.Business.Service.CommentService;
-import com.leverx.RatingSystemRest.Business.Service.GameObjectService;
-import com.leverx.RatingSystemRest.Business.Service.UserService;
+import com.leverx.RatingSystemRest.Business.CommentService;
+import com.leverx.RatingSystemRest.Business.GameObjectService;
+import com.leverx.RatingSystemRest.Business.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;

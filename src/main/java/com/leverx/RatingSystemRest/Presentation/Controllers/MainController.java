@@ -1,10 +1,10 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 
-import com.leverx.RatingSystemRest.Business.Service.CommentService;
-import com.leverx.RatingSystemRest.Business.Service.EmailService;
-import com.leverx.RatingSystemRest.Business.Service.GameObjectService;
-import com.leverx.RatingSystemRest.Business.Service.UserService;
+import com.leverx.RatingSystemRest.Business.CommentService;
+import com.leverx.RatingSystemRest.Business.EmailService;
+import com.leverx.RatingSystemRest.Business.GameObjectService;
+import com.leverx.RatingSystemRest.Business.UserService;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;

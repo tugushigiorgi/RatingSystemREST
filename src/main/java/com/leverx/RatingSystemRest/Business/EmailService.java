@@ -1,4 +1,4 @@
-package com.leverx.RatingSystemRest.Business.Service;
+package com.leverx.RatingSystemRest.Business;
 
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;

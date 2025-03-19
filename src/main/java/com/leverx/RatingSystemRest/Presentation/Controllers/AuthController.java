@@ -1,6 +1,6 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
-import com.leverx.RatingSystemRest.Business.Service.UserService;
+import com.leverx.RatingSystemRest.Business.UserService;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.jwtDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.Logindto;

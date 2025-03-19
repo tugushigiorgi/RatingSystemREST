@@ -27,7 +27,7 @@ public class UserPhoto {
     @Column(nullable = false)
     private String Extension;
     @Column(nullable = false)
-    private float size  ;
+    private double size  ;
 
     @OneToOne
     @JsonIgnore

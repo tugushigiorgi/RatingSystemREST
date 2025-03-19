@@ -25,7 +25,7 @@ public class GameObjectPicture {
     @Column(nullable = false)
     private String Extension;
     @Column(nullable = false)
-    private float size ;
+    private double size ;
     @JsonIgnore
     @OneToOne
     @JoinColumn(name = "gameobject_id")
