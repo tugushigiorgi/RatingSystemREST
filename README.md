@@ -76,6 +76,8 @@ This will automatically pull and start a MySQL container with the required confi
    ```
    http://localhost:8080
    ```
+5. Admin User Initialization
+After running the application, an admin user (with the role ADMIN) will be automatically inserted into the database. The default admin email and password are listed in the DataInitializer file and will also be printed in the console when the application starts.
 
 ## Database Scheme 
 ![Entities drawio](https://github.com/user-attachments/assets/ba2ed1a0-cd4e-4e65-84e7-8b2ccc9cf96b)
