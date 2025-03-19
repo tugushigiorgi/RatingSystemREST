@@ -87,11 +87,12 @@ After running the application, an admin user (with the role ADMIN) will be autom
 ## Admin Pages 
 
 
-<img width="1280" alt="ADMIN_USERAPPROVERREVIEWS" src="https://github.com/user-attachments/assets/bd548b33-06e1-42a1-beed-67127f71bdf4" />
+
 <img width="1280" alt="admin_SELLERS" src="https://github.com/user-attachments/assets/9e610ac0-140b-4402-a56c-1895a4a38716" />
 <img width="1280" alt="ADMIN_USERAPPROVERREVIEWS" src="https://github.com/user-attachments/assets/b9cb8ff2-6393-451c-af3a-cba3abec0751" />
 <img width="1280" alt="Admin_RegistrationRequestsList" src="https://github.com/user-attachments/assets/917f4b9c-54f1-415f-a37e-3269c7516ee7" />
 <img width="1280" alt="ADMIN_COMMENTREQUESTS" src="https://github.com/user-attachments/assets/816e9e04-d2d6-4ca5-ada1-cdcb07731e58" />
+<img width="1280" alt="ADMIN_USERAPPROVERREVIEWS" src="https://github.com/user-attachments/assets/bd548b33-06e1-42a1-beed-67127f71bdf4" />
 
 ## Seller Profile Pages
 <img width="1280" alt="PROFIEL_ADDEDGAMES" src="https://github.com/user-attachments/assets/7d2b8b0d-078c-4ec1-99ba-71003c31c495" />
