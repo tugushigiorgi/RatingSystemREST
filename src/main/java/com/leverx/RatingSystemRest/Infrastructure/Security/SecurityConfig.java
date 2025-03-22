@@ -43,25 +43,13 @@ public class SecurityConfig {
     private JwtFactory jwtFactory;
     private UserRepository userRepository;
 
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(authorizeRequests ->
-//                        authorizeRequests
-//                                .anyRequest().permitAll()
-//                );
-//
-//        return http.build();
-//
-//    }
+ 
 
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider, JwtFilter jwtFilter, CorsFilter corsFilter) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF if needed
+                .csrf(AbstractHttpConfigurer::disable)  
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/auth/**", "/api/main/**","/images/**").permitAll()
