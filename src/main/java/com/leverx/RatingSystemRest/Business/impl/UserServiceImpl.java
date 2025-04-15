@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 @Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-
     @Value("${file.upload-dir}")
     private String uploadDir;
     private final PasswordEncoder passwordEncoder;
@@ -44,7 +43,7 @@ public class UserServiceImpl implements UserService {
     private final EmailServiceImp emailService;
     private final TokenRepository tokenRepository;
     private final passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
-    private JwtFactory jwtFactory;
+    private final JwtFactory jwtFactory;
 
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailServiceImp emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository, JwtFactory jwtFactory) {
         this.userRepository = userRepository;
@@ -65,9 +64,7 @@ public class UserServiceImpl implements UserService {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         // TODO: write code base on this example:
-        var mapToDtoList = getlist.stream()
-                .map(AdminNotApprovedUserDto::toDto)
-                .toList();
+        var mapToDtoList = getlist.stream().map(AdminNotApprovedUserDto::toDto).toList();
         return new ResponseEntity<>(mapToDtoList, HttpStatus.OK);
 
     }
@@ -112,8 +109,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public ResponseEntity<String> deleteById(int userId) {
 
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
+        var user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
 
         deleteUserFolderByUrl(uploadDir + File.separator + userId);
         userRepository.deleteById(userId);
@@ -124,7 +120,7 @@ public class UserServiceImpl implements UserService {
 
     private boolean deleteUserFolderByUrl(String folderUrl) {
         try {
-            var  folderPath = Paths.get(folderUrl);
+            var folderPath = Paths.get(folderUrl);
             if (!Files.exists(folderPath)) {
                 System.out.println("Folder does not exist: " + folderUrl);
                 return false;
@@ -140,25 +136,23 @@ public class UserServiceImpl implements UserService {
 
     private static void deleteRecursively(Path path) throws IOException {
         try (Stream<Path> files = Files.walk(path)) {
-            files.sorted(Comparator.reverseOrder())
-                    .forEach(p -> {
-                        try {
-                            if (Files.isDirectory(p)) {
-                                Files.delete(p);
-                            } else {
-                                Files.delete(p);
-                            }
-                        } catch (IOException e) {
-                            System.err.println("Failed to delete: " + p);
-                        }
-                    });
+            files.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    if (Files.isDirectory(p)) {
+                        Files.delete(p);
+                    } else {
+                        Files.delete(p);
+                    }
+                } catch (IOException e) {
+                    System.err.println("Failed to delete: " + p);
+                }
+            });
         }
     }
 
 
     public ResponseEntity<UserInfoDto> getUserInfoById(int userId) {
-        var getuser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+        var getuser = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
         var toDto = UserInfoDto.toDto(getuser);
         return new ResponseEntity<>(toDto, HttpStatus.OK);
     }
@@ -166,8 +160,7 @@ public class UserServiceImpl implements UserService {
 
     public ResponseEntity<String> changePassword(int currentuserId, ChangePasswordDto dto) {
 
-        var getuser = userRepository.findById(currentuserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
+        var getuser = userRepository.findById(currentuserId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
 
 
         if (!Objects.equals(dto.newPassword, dto.repeatPassword)) {
@@ -206,8 +199,7 @@ public class UserServiceImpl implements UserService {
 
     public ResponseEntity<SellerProfileDto> getSellerProfileById(int userId) {
 
-        var currentSeller = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+        var currentSeller = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
         var info = UserInfoDto.toDto(currentSeller);
 
         var gameList = currentSeller.getGameObjects();
@@ -218,9 +210,7 @@ public class UserServiceImpl implements UserService {
         var toDtoGameList = gameList.stream().map(GameObjectDto::toDto).toList();
 
 
-        return new ResponseEntity<>(SellerProfileDto.builder()
-                .userInfo(info)
-                .gameObjects(toDtoGameList).build(), HttpStatus.OK);
+        return new ResponseEntity<>(SellerProfileDto.builder().userInfo(info).gameObjects(toDtoGameList).build(), HttpStatus.OK);
 
     }
 
@@ -233,16 +223,7 @@ public class UserServiceImpl implements UserService {
         if (checkifExists.isPresent()) {
             return new ResponseEntity<>("email already in use", HttpStatus.BAD_REQUEST);
         }
-        var createUser = User.builder()
-                .created_at(LocalDateTime.now())
-                .first_name(dto.name)
-                .last_name(dto.surname)
-                .email(dto.email)
-                .password(passwordEncoder.encode(dto.password))
-                .isApprovedByAdmin(false)
-                .role(UserRoleEnum.SELLER)
-                .HasVerifiedEmail(false)
-                .build();
+        var createUser = User.builder().created_at(LocalDateTime.now()).first_name(dto.name).last_name(dto.surname).email(dto.email).password(passwordEncoder.encode(dto.password)).isApprovedByAdmin(false).role(UserRoleEnum.SELLER).HasVerifiedEmail(false).build();
 
         userRepository.save(createUser);
 
@@ -260,15 +241,10 @@ public class UserServiceImpl implements UserService {
 
     public void sendRegistrationEmail(User user) {
 
-       var  generatedtoken = UUID.randomUUID().toString();
+        var generatedtoken = UUID.randomUUID().toString();
 
         emailService.sendConfirmationEmail(user.getEmail(), generatedtoken);
-        var token = Token.builder()
-                .token(generatedtoken)
-                .created_at(LocalDateTime.now())
-                .expires_at(LocalDateTime.now().plusHours(24))
-                .user(user)
-                .build();
+        var token = Token.builder().token(generatedtoken).created_at(LocalDateTime.now()).expires_at(LocalDateTime.now().plusHours(24)).user(user).build();
         tokenRepository.save(token);
 
     }
@@ -282,8 +258,7 @@ public class UserServiceImpl implements UserService {
         }
 
 
-        var user = userRepository.findById(savedToken.get().getUser().getId())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        var user = userRepository.findById(savedToken.get().getUser().getId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (user.isHasVerifiedEmail()) {
             return new ResponseEntity<>("Account is already verified", HttpStatus.BAD_REQUEST);
@@ -308,26 +283,22 @@ public class UserServiceImpl implements UserService {
 
     private UserPhoto saveUserPictureLocal(int userid, MultipartFile picture) {
 
-        var  userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
+        var userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
 
 
-        var  userFolder = new File(userFolderPath);
+        var userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
             userFolder.mkdirs();
         }
-       var  uuid = UUID.randomUUID();
-        var  modifedFileName = uuid + picture.getOriginalFilename();
-        var  publicUrl = userid + File.separator + "Profile" + File.separator + modifedFileName;
-        var  filePath = userFolderPath + File.separator + modifedFileName;
+        var uuid = UUID.randomUUID();
+        var modifedFileName = uuid + picture.getOriginalFilename();
+        var publicUrl = userid + File.separator + "Profile" + File.separator + modifedFileName;
+        var filePath = userFolderPath + File.separator + modifedFileName;
         try {
 
-           var  savedFile = new File(filePath);
+            var savedFile = new File(filePath);
             picture.transferTo(savedFile);
-            return UserPhoto.builder()
-                    .Url(publicUrl)
-                    .size(picture.getSize())
-                    .Extension(picture.getContentType())
-                    .photoName(modifedFileName).build();
+            return UserPhoto.builder().Url(publicUrl).size(picture.getSize()).Extension(picture.getContentType()).photoName(modifedFileName).build();
 
         } catch (IOException e) {
 
@@ -352,13 +323,8 @@ public class UserServiceImpl implements UserService {
         }
 
         var currentuser = getuser.get();
-        var  generatedtoken = UUID.randomUUID().toString();
-        var token = PasswordRecoveryToken.builder()
-                .token(generatedtoken)
-                .createdAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusHours(24))
-                .user(currentuser)
-                .build();
+        var generatedtoken = UUID.randomUUID().toString();
+        var token = PasswordRecoveryToken.builder().token(generatedtoken).createdAt(LocalDateTime.now()).expiresAt(LocalDateTime.now().plusHours(24)).user(currentuser).build();
         pwdRecoveryTokenRepository.save(token);
         emailService.sendRecoverLink(currentuser.getEmail(), generatedtoken);
 
@@ -371,8 +337,7 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> updatePassword(RecoverPasswordDto dto) {
 
 
-        var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+        var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken()).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
 
 
         if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
@@ -381,8 +346,7 @@ public class UserServiceImpl implements UserService {
         }
 
 
-        var user = userRepository.findById(savedToken.getUser().getId())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        var user = userRepository.findById(savedToken.getUser().getId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
 
         if (!dto.getNewpassword().equals(dto.getPassword())) {
@@ -410,9 +374,8 @@ public class UserServiceImpl implements UserService {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
             }
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
-            jwtFactory = new JwtFactory();
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
+           var jwtFactory = new JwtFactory();
             var token = jwtFactory.generateToken(getuser.get());
             var dto = new jwtDto(token, getuser.get().getRole().toString());
             return ResponseEntity.ok(dto);

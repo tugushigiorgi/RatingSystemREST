@@ -9,5 +9,5 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class GameObjectPictureServiceImp implements GameObjectPictureService {
 
-    private GameObjectPictureRepository gameObjectPictureRepository;
+    private final GameObjectPictureRepository gameObjectPictureRepository;
 }

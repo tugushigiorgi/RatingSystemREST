@@ -21,9 +21,9 @@ import java.util.List;
 public class AdminController {
 
 
-    private UserServiceImpl userServiceImpl;
+    private final UserServiceImpl userServiceImpl;
 
-    private commentService commentService;
+    private final  commentService commentService;
 
     //TODO  uppercase -> lower case methods name
     //GOOGle CHECKSTYLE

@@ -23,10 +23,10 @@ import java.util.List;
 @RequestMapping("/api/seller")
 public class SellerController {
     private final UserServiceImpl userServiceImpl;
-    private GameObjectServiceImp gameObjectService;
-    private UserRepository userRepository;
+    private final  GameObjectServiceImp gameObjectService;
+    private final UserRepository userRepository;
 
-    private commentService commentService;
+    private final commentService commentService;
 
 
     @GetMapping("/games")

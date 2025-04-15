@@ -17,9 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/game")
 public class GameController {
 
-    private GameObjectService gameObjectService;
-    private UserRepository userRepository;
-    private UserServiceImpl userServiceImpl;
+    private final  GameObjectService gameObjectService;
+    private final UserRepository userRepository;
+    private final UserServiceImpl userServiceImpl;
 
     @PostMapping
     public ResponseEntity<String> addGame(
