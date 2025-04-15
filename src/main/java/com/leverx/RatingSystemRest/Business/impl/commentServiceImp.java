@@ -1,6 +1,7 @@
 package com.leverx.RatingSystemRest.Business.impl;
 
 
+import com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages;
 import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
@@ -36,13 +37,13 @@ public class commentServiceImp implements commentService {
         var currentSeller = userRepository.findById(dto.sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
         var  hasMatchingAnonymousId = currentSeller.getComments().stream().anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
         if (hasMatchingAnonymousId) {
-            return new ResponseEntity<>("anonymous with given id  already submited review", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(CommentConstMessages.ANONYMOUS_ALREADY_SUBMITED_MESSAGE, HttpStatus.BAD_REQUEST);
         }
         var newComment = Comment.builder().approved(false).created_at(LocalDateTime.now()).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
         currentSeller.getComments().add(newComment);
         commentRepository.save(newComment);
         userRepository.save(currentSeller);
-        return new ResponseEntity<>("comment added", HttpStatus.OK);
+        return new ResponseEntity<>(CommentConstMessages.COMMENT_ADDED_MESSAGE, HttpStatus.OK);
 
 
     }
@@ -50,25 +51,25 @@ public class commentServiceImp implements commentService {
     @Transactional
     public ResponseEntity<String> delete(int anonymousId, int commentId) {
 
-        var currentComment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+        var currentComment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE));
 
 
         if (currentComment.getAnonymousId() != anonymousId) {
-            return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(CommentConstMessages.PERMISSION_DENIED_MESSAGE, HttpStatus.BAD_REQUEST);
 
         }
         commentRepository.deleteById(commentId);
-        return new ResponseEntity<>("Deleted succesfully", HttpStatus.OK);
+        return new ResponseEntity<>(CommentConstMessages.DELETED_SUCCESSFULLY_MESSAGE, HttpStatus.OK);
 
 
     }
 
     public ResponseEntity<String> update(CommentUpdateDto dto) {
 
-        var currentComment = commentRepository.findById(dto.getCommentId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+        var currentComment = commentRepository.findById(dto.getCommentId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE));
 
         if (currentComment.getAnonymousId() != dto.getAnonymousId()) {
-            return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(CommentConstMessages.PERMISSION_DENIED_MESSAGE, HttpStatus.BAD_REQUEST);
 
         }
 
@@ -83,12 +84,12 @@ public class commentServiceImp implements commentService {
         commentRepository.save(currentComment);
 
 
-        return new ResponseEntity<>("Updated succesfully", HttpStatus.OK);
+        return new ResponseEntity<>(CommentConstMessages.UPDATED_SUCCESSFULLY_MESSAGE, HttpStatus.OK);
     }
 
 
     public ResponseEntity<List<UserReviewsDto>> getApprovedReviewsBySellerId(int sellerId) {
-        var seller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+        var seller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, CommentConstMessages.SELLER_NOT_FOUND_MESSAGE));
 
         var reviews = commentRepository.sellersAllApprovedReviews(sellerId);
 
@@ -102,7 +103,7 @@ public class commentServiceImp implements commentService {
 
 
     public List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception {
-        var seller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
+        var seller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, CommentConstMessages.SELLER_NOT_FOUND_MESSAGE));
 
         var Reviews = commentRepository.sellersNotApprovedReviews(sellerId);
         return Reviews.stream().map(UserReviewsDto::toDto).toList();
@@ -122,9 +123,9 @@ public class commentServiceImp implements commentService {
     public ResponseEntity<String> approveUserReview(int commentId) {
 
 
-        var getcomment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+        var getcomment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE));
 
-        var currentSeller = userRepository.findById(getcomment.getUser().getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+        var currentSeller = userRepository.findById(getcomment.getUser().getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, CommentConstMessages.SELLER_NOT_FOUND_MESSAGE));
 
 
         var userTotalApprovedComments = currentSeller.getComments().stream().filter(Comment::isApproved).toList();
@@ -139,16 +140,16 @@ public class commentServiceImp implements commentService {
 
         getcomment.setApproved(true);
         commentRepository.save(getcomment);
-        return new ResponseEntity<>("Comment Approved", HttpStatus.OK);
+        return new ResponseEntity<>(CommentConstMessages.COMMENT_APPROVED_MESSAGE, HttpStatus.OK);
 
 
     }
 
     @Transactional
     public ResponseEntity<String> declineUserReview(int commentId) {
-        var getcomment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment not found"));
+        var getcomment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE));
         commentRepository.deleteById(commentId);
-        return new ResponseEntity<>("Comment Deleted", HttpStatus.OK);
+        return new ResponseEntity<>(CommentConstMessages.COMMENT_DELETED_MESSAGE, HttpStatus.OK);
     }
 
 
