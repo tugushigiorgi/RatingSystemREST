@@ -23,6 +23,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -63,13 +64,14 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests() {
 
         var getlist = userRepository.notApprovedSellersList();
-        // TODO: use util classes to check null or empty list
-        // CollectionUtils.isEmpty()
-        if (getlist == null || getlist.isEmpty()) {
+
+        if (CollectionUtils.isEmpty(getlist)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         // TODO: write code base on this example:
-        var mapToDtoList = getlist.stream().map(AdminNotApprovedUserDto::toDto).toList();
+        var mapToDtoList = getlist.stream()
+                .map(AdminNotApprovedUserDto::toDto)
+                .toList();
         return new ResponseEntity<>(mapToDtoList, HttpStatus.OK);
 
     }
@@ -79,7 +81,7 @@ public class UserServiceImpl implements UserService {
                 // TODO: try to check all examples when we should use static import
                 // TODO: chekc how to replace it to constant(messages) + additional info about seller
 //                // String.format("This is the string: %s","test")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
 
         if (!currentSeller.isHasVerifiedEmail()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -94,7 +96,7 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<List<DetailedUserDto>> detailedRegisteredUsers() {
         var users = userRepository.ApprovedSellersList();
 
-        if (users == null || users.isEmpty()) {
+        if (CollectionUtils.isEmpty(users)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         var toDtoList = users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
@@ -193,10 +195,12 @@ public class UserServiceImpl implements UserService {
 
         var getlist = userRepository.findTop5RatedSellers();
 
-        if (getlist == null || getlist.isEmpty()) {
+        if (CollectionUtils.isEmpty(getlist)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        var toDtoList = getlist.stream().map(UserInfoDto::toDto).toList();
+        var toDtoList = getlist.stream()
+                .map(UserInfoDto::toDto)
+                .toList();
         return new ResponseEntity<>(toDtoList, HttpStatus.OK);
 
     }
@@ -209,7 +213,7 @@ public class UserServiceImpl implements UserService {
 
         var gameList = currentSeller.getGameObjects();
 
-        if (gameList == null || gameList.isEmpty()) {
+        if (CollectionUtils.isEmpty(gameList)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         var toDtoGameList = gameList.stream().map(GameObjectDto::toDto).toList();

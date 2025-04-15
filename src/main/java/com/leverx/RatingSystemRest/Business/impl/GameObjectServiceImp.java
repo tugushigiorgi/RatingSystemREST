@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,6 +31,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.PERMISSION_DENIED_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.PICTURE_CANNOT_BE_SAVED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.*;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
 
 @Data
 @Service
@@ -53,10 +59,10 @@ public class GameObjectServiceImp  implements GameObjectService {
 
     public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId) {
         var currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
         var savedPicture = saveNewPictureOnLocalFolder(userId, photo);
         if (savedPicture == null) {
-            return new ResponseEntity<>("Failed to save picture.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(PICTURE_CANNOT_BE_SAVED, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         var gameObject = GameObject.builder()
                 .price(dto.getPrice())
@@ -69,7 +75,7 @@ public class GameObjectServiceImp  implements GameObjectService {
         savedPicture.setGameObject(gameObject);
         gameObjectRepository.save(gameObject);
 
-        return new ResponseEntity<>("New object added successfully!", HttpStatus.OK);
+        return new ResponseEntity<>(GAME_ADDED, HttpStatus.OK);
     }
 
 
@@ -77,24 +83,24 @@ public class GameObjectServiceImp  implements GameObjectService {
     public ResponseEntity<String> remove(int gameObjectId, int userId) {
 
         var getcurrentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
 
         var currentObject = gameObjectRepository.findById(gameObjectId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "GameObject   not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, GAME_NOT_FOUND));
 
         if (!Objects.equals(currentObject.getUser().getId(), currentObject.getUser().getId())) {
 
-            return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, HttpStatus.BAD_REQUEST);
         }
 
         try {
             gameObjectRepository.delete(currentObject);
            var path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
             Files.delete(path);
-            return new ResponseEntity<>("Successfully deleted with id" + gameObjectId, HttpStatus.OK);
+            return new ResponseEntity<>(SUCCESSFULLY_DELETED_WITH_ID + gameObjectId, HttpStatus.OK);
 
         } catch (Exception e) {
-            return new ResponseEntity<>("Something went wrong", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
 
         }
 
@@ -105,15 +111,15 @@ public class GameObjectServiceImp  implements GameObjectService {
     public ResponseEntity<String> update(UpdateGameObject dto, MultipartFile photo, int userId) {
 
         var currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
 
         var currentObject = gameObjectRepository.findById(dto.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "GameObject not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, GAME_NOT_FOUND));
 
 
         if (currentObject.getUser().getId() != currentObject.getUser().getId()) {
 
-            return new ResponseEntity<>("Permission denied", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, HttpStatus.BAD_REQUEST);
         }
 
 
@@ -135,7 +141,7 @@ public class GameObjectServiceImp  implements GameObjectService {
                 gameObjectPictureRepository.delete(currentObject.getPicture());
                 gameObjectRepository.save(currentObject);
                 gameObjectPictureRepository.save(updatePicture);
-                return new ResponseEntity<>("object updated succesfully", HttpStatus.OK);
+                return new ResponseEntity<>(OBJECT_UPDATED, HttpStatus.OK);
 
             }
 
@@ -145,7 +151,7 @@ public class GameObjectServiceImp  implements GameObjectService {
         gameObjectRepository.save(currentObject);
 
 
-        return new ResponseEntity<>("Game object updated successfully", HttpStatus.OK);
+        return new ResponseEntity<>(OBJECT_UPDATED, HttpStatus.OK);
 
     }
 
@@ -196,11 +202,11 @@ public class GameObjectServiceImp  implements GameObjectService {
     public ResponseEntity<List<GameObjectDto>> getGameObjectsBySellerId(int sellerId) throws Exception {
 
         var getUser = userRepository.findById(sellerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
 
         var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
 
-        if (getGames == null || getGames.isEmpty()) {
+        if (CollectionUtils.isEmpty(getGames)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         var toDto = getGames.stream().map(GameObjectDto::toDto).toList();
@@ -218,7 +224,7 @@ public class GameObjectServiceImp  implements GameObjectService {
             data = gameObjectRepository.filterByTitleAndRating(title, sellerRating);
         }
 
-        if (data== null || data.isEmpty()) {
+        if (CollectionUtils.isEmpty(data)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
 
