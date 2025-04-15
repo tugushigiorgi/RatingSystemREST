@@ -1,8 +1,12 @@
 package com.leverx.RatingSystemRest.Business.ConstMessages;
 
-public class CommentConstMessages {
+/**
+ * Constants for comment-related messages used in the CommentService.
+ */
+@SuppressWarnings("checkstyle:Indentation")
+public final class CommentConstMessages {
 
-    public static final String ANONYMOUS_ALREADY_SUBMITED_MESSAGE = "Anonymous with given id  already submited review";
+    public static final String ANONYMOUS_ALREADY_SUBMITTED_MESSAGE = "Anonymous with given id already submitted review";
 
     public static final String COMMENT_ADDED_MESSAGE = "Comment added successfully";
 
@@ -19,5 +23,4 @@ public class CommentConstMessages {
     public static final String COMMENT_APPROVED_MESSAGE = "Comment approved successfully";
 
     public static final String COMMENT_DELETED_MESSAGE = "Comment deleted successfully";
-
 }

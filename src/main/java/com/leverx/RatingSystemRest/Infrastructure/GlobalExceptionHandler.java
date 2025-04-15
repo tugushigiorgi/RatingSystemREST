@@ -3,7 +3,6 @@ package com.leverx.RatingSystemRest.Infrastructure;
 
 import jakarta.mail.MessagingException;
 import lombok.*;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

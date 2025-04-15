@@ -36,8 +36,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_APPROVED_SELLER_REGISTRATION;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_DELETED_SUCCESSFULLY;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.*;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.*;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -66,13 +67,13 @@ public class UserServiceImpl implements UserService {
         var getlist = userRepository.notApprovedSellersList();
 
         if (CollectionUtils.isEmpty(getlist)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
         // TODO: write code base on this example:
         var mapToDtoList = getlist.stream()
                 .map(AdminNotApprovedUserDto::toDto)
                 .toList();
-        return new ResponseEntity<>(mapToDtoList, HttpStatus.OK);
+        return new ResponseEntity<>(mapToDtoList, OK);
 
     }
 
@@ -81,15 +82,15 @@ public class UserServiceImpl implements UserService {
                 // TODO: try to check all examples when we should use static import
                 // TODO: chekc how to replace it to constant(messages) + additional info about seller
 //                // String.format("This is the string: %s","test")
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
 
         if (!currentSeller.isHasVerifiedEmail()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(BAD_REQUEST);
         }
         currentSeller.setApprovedByAdmin(true);
         userRepository.save(currentSeller);
 
-        return new ResponseEntity<>(SUCCESSFULLY_APPROVED_SELLER_REGISTRATION, HttpStatus.OK);
+        return new ResponseEntity<>(SUCCESSFULLY_APPROVED_SELLER_REGISTRATION, OK);
     }
 
 
@@ -97,31 +98,31 @@ public class UserServiceImpl implements UserService {
         var users = userRepository.ApprovedSellersList();
 
         if (CollectionUtils.isEmpty(users)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
         var toDtoList = users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
-        return new ResponseEntity<>(toDtoList, HttpStatus.OK);
+        return new ResponseEntity<>(toDtoList, OK);
     }
 
 
     public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUsersByUsername(String username) {
         var users = userRepository.GetRegisteredSellerByUsername(username);
         if (users.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
         var toDtoList = users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
-        return new ResponseEntity<>(toDtoList, HttpStatus.OK);
+        return new ResponseEntity<>(toDtoList, OK);
     }
 
     @Transactional
     public ResponseEntity<String> deleteById(int userId) {
 
-        var user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
+        var user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "User not found"));
 
         deleteUserFolderByUrl(uploadDir + File.separator + userId);
         userRepository.deleteById(userId);
 
-        return new ResponseEntity<>(UserConstMessages.USER_DELETED_SUCCESSFULLY, HttpStatus.OK);
+        return new ResponseEntity<>(USER_DELETED_SUCCESSFULLY, OK);
     }
 
 
@@ -129,11 +130,11 @@ public class UserServiceImpl implements UserService {
         try {
             var folderPath = Paths.get(folderUrl);
             if (!Files.exists(folderPath)) {
-                System.out.println(FileConstMessages.FOLDER_DOES_NOT_EXIST + folderUrl);
+                System.out.println(FOLDER_DOES_NOT_EXIST + folderUrl);
                 return false;
             }
             deleteRecursively(folderPath);
-            System.out.println(FileConstMessages.FOLDER_AND_ITS_CONTENT_DELETED + folderUrl);
+            System.out.println(FOLDER_AND_ITS_CONTENT_DELETED + folderUrl);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -151,7 +152,7 @@ public class UserServiceImpl implements UserService {
                         Files.delete(p);
                     }
                 } catch (IOException e) {
-                    System.err.println(FileConstMessages.FAILED_TO_DELETE + p);
+                    System.err.println(FAILED_TO_DELETE + p);
                 }
             });
         }
@@ -161,31 +162,31 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<UserInfoDto> getUserInfoById(int userId) {
         var getuser = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.SELLER_NOT_FOUND));
         var toDto = UserInfoDto.toDto(getuser);
-        return new ResponseEntity<>(toDto, HttpStatus.OK);
+        return new ResponseEntity<>(toDto, OK);
     }
 
 
     public ResponseEntity<String> changePassword(int currentuserId, ChangePasswordDto dto) {
 
-        var getuser = userRepository.findById(currentuserId).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, UserConstMessages.USER_NOT_FOUND));
+        var getuser = userRepository.findById(currentuserId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.USER_NOT_FOUND));
 
 
         if (!Objects.equals(dto.newPassword, dto.repeatPassword)) {
-            return new ResponseEntity<>(UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH, BAD_REQUEST);
         }
 
         if (passwordEncoder.encode(dto.oldPassword).equals(getuser.getPassword())) {
 
-            return new ResponseEntity<>(UserConstMessages.PASSWORD_IS_SAME, HttpStatus.OK);
+            return new ResponseEntity<>(PASSWORD_IS_SAME, OK);
         }
 
         if (!passwordEncoder.matches(dto.oldPassword, getuser.getPassword())) {
-            return new ResponseEntity<>(UserConstMessages.INCORRECT_PASSWORD, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(INCORRECT_PASSWORD, BAD_REQUEST);
         }
         var newPassword = passwordEncoder.encode(dto.newPassword);
         getuser.setPassword(newPassword);
         userRepository.save(getuser);
-        return new ResponseEntity<>(UserConstMessages.PASSWORD_CHANGED, HttpStatus.OK);
+        return new ResponseEntity<>(PASSWORD_CHANGED, OK);
 
 
     }
@@ -196,12 +197,12 @@ public class UserServiceImpl implements UserService {
         var getlist = userRepository.findTop5RatedSellers();
 
         if (CollectionUtils.isEmpty(getlist)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
         var toDtoList = getlist.stream()
                 .map(UserInfoDto::toDto)
                 .toList();
-        return new ResponseEntity<>(toDtoList, HttpStatus.OK);
+        return new ResponseEntity<>(toDtoList, OK);
 
     }
 
@@ -214,12 +215,12 @@ public class UserServiceImpl implements UserService {
         var gameList = currentSeller.getGameObjects();
 
         if (CollectionUtils.isEmpty(gameList)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
         var toDtoGameList = gameList.stream().map(GameObjectDto::toDto).toList();
 
 
-        return new ResponseEntity<>(SellerProfileDto.builder().userInfo(info).gameObjects(toDtoGameList).build(), HttpStatus.OK);
+        return new ResponseEntity<>(SellerProfileDto.builder().userInfo(info).gameObjects(toDtoGameList).build(), OK);
 
     }
 
@@ -230,7 +231,7 @@ public class UserServiceImpl implements UserService {
         var checkifExists = userRepository.findByEmail(dto.email);
 
         if (checkifExists.isPresent()) {
-            return new ResponseEntity<>(UserConstMessages.EMAIL_ALREADY_EXISTS, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(EMAIL_ALREADY_EXISTS, BAD_REQUEST);
         }
         var createUser = User.builder().created_at(LocalDateTime.now()).first_name(dto.name).last_name(dto.surname).email(dto.email).password(passwordEncoder.encode(dto.password)).isApprovedByAdmin(false).role(UserRoleEnum.SELLER).HasVerifiedEmail(false).build();
 
@@ -241,10 +242,10 @@ public class UserServiceImpl implements UserService {
             savephoto.setUser(createUser);
             userPhotoRepository.save(savephoto);
         } else {
-            return new ResponseEntity<>(FileConstMessages.PICTURE_CANNOT_BE_SAVED, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(PICTURE_CANNOT_BE_SAVED, INTERNAL_SERVER_ERROR);
         }
         sendRegistrationEmail(createUser);
-        return new ResponseEntity<>(UserConstMessages.USER_REGISTERED_SUCCESSFULLY, HttpStatus.OK);
+        return new ResponseEntity<>(USER_REGISTERED_SUCCESSFULLY, OK);
     }
 
 
@@ -263,14 +264,14 @@ public class UserServiceImpl implements UserService {
 
         var savedToken = tokenRepository.findByToken(token);
         if (savedToken.isEmpty()) {
-            return new ResponseEntity<>(UserConstMessages.TOKEN_NOT_FOUND, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(TOKEN_NOT_FOUND, NOT_FOUND);
         }
 
 
         var user = userRepository.findById(savedToken.get().getUser().getId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         if (user.isHasVerifiedEmail()) {
-            return new ResponseEntity<>(UserConstMessages.ACCOUNT_IS_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ACCOUNT_IS_ALREADY_VERIFIED, BAD_REQUEST);
         }
 
         if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
@@ -278,7 +279,7 @@ public class UserServiceImpl implements UserService {
             tokenRepository.deleteById(savedToken.get().getId());
             sendRegistrationEmail(user);
 
-            return new ResponseEntity<>(UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(TOKEN_EXPIRED_NEW_TOKEN_SEND, BAD_REQUEST);
         }
         user.setHasVerifiedEmail(true);
 
@@ -286,7 +287,7 @@ public class UserServiceImpl implements UserService {
         tokenRepository.deleteTokenById(savedToken.get().getId());
 
 
-        return new ResponseEntity<>(UserConstMessages.SUCCESSFULLY_ENABLED, HttpStatus.OK);
+        return new ResponseEntity<>(SUCCESSFULLY_ENABLED, OK);
     }
 
 
@@ -323,12 +324,12 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> sendRecoverCode(String email) {
         var getuser = userRepository.findByEmail(email);
         if (getuser.isEmpty()) {
-            return new ResponseEntity<>(UserConstMessages.USER_NOT_FOUND_WITH_EMAIL, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(USER_NOT_FOUND_WITH_EMAIL, NOT_FOUND);
         }
 
         if (getuser.get().getPasswordRecoveryToken() != null) {
 
-            return new ResponseEntity<>(UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(PASSWORD_RECOVERY_TOKEN_ALREADY_SENT, BAD_REQUEST);
         }
 
         var currentuser = getuser.get();
@@ -338,7 +339,7 @@ public class UserServiceImpl implements UserService {
         emailService.sendRecoverLink(currentuser.getEmail(), generatedtoken);
 
 
-        return new ResponseEntity<>(UserConstMessages.EMAIL_SENT_SUCCESSFULLY, HttpStatus.OK);
+        return new ResponseEntity<>(EMAIL_SENT_SUCCESSFULLY, OK);
 
 
     }
@@ -351,7 +352,7 @@ public class UserServiceImpl implements UserService {
 
         if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
             pwdRecoveryTokenRepository.deleteById(savedToken.getId());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(UserConstMessages.TOKEN_EXPIRED);
+            return ResponseEntity.status(BAD_REQUEST).body(TOKEN_EXPIRED);
         }
 
 
@@ -359,7 +360,7 @@ public class UserServiceImpl implements UserService {
 
 
         if (!dto.getNewpassword().equals(dto.getPassword())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(UserConstMessages.PASSWORD_DOES_NOT_MATCH);
+            return ResponseEntity.status(BAD_REQUEST).body(UserConstMessages.PASSWORD_DOES_NOT_MATCH);
         }
 
 
@@ -370,7 +371,7 @@ public class UserServiceImpl implements UserService {
 
         pwdRecoveryTokenRepository.DeleteByID(savedToken.getId());
 
-        return ResponseEntity.ok(UserConstMessages.PASSWORD_UPDATED_SUCCESSFULLY);
+        return ResponseEntity.ok(PASSWORD_UPDATED_SUCCESSFULLY);
     }
 
 
@@ -380,18 +381,18 @@ public class UserServiceImpl implements UserService {
             var getuser = userRepository.findByEmail(logindto.getEmail());
             if (getuser.isPresent()) {
                 if (!getuser.get().isApprovedByAdmin) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    return ResponseEntity.status(BAD_REQUEST).body(null);
                 }
             }
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
-           var jwtFactory = new JwtFactory();
+            var jwtFactory = new JwtFactory();
             var token = jwtFactory.generateToken(getuser.get());
             var dto = new jwtDto(token, getuser.get().getRole().toString());
             return ResponseEntity.ok(dto);
 
         } catch (Exception e) {
-            System.out.println(UserConstMessages.AUTHENICATION_FAILED+ " "+ e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            System.out.println(AUTHENTICATION_FAILED + " " + e.getMessage());
+            return ResponseEntity.status(UNAUTHORIZED).body(null);
         }
 
     }
@@ -415,13 +416,13 @@ public class UserServiceImpl implements UserService {
         var getusr = userRepository.findByEmail(authentication.getName());
         if (getusr.isPresent()) {
             if (getusr.get().getRole().equals(UserRoleEnum.ADMIN)) {
-                return new ResponseEntity(new isAdminDto(true), HttpStatus.OK);
+                return new ResponseEntity(new isAdminDto(true), OK);
             }
 
-            return new ResponseEntity<>(new isAdminDto(false), HttpStatus.OK);
+            return new ResponseEntity<>(new isAdminDto(false), OK);
 
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        return ResponseEntity.status(BAD_REQUEST).body(null);
 
     }
 
