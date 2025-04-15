@@ -124,7 +124,7 @@ public class UserServiceImpl implements UserService {
 
     private boolean deleteUserFolderByUrl(String folderUrl) {
         try {
-            Path folderPath = Paths.get(folderUrl);
+            var  folderPath = Paths.get(folderUrl);
             if (!Files.exists(folderPath)) {
                 System.out.println("Folder does not exist: " + folderUrl);
                 return false;
@@ -260,7 +260,7 @@ public class UserServiceImpl implements UserService {
 
     public void sendRegistrationEmail(User user) {
 
-        String generatedtoken = UUID.randomUUID().toString();
+       var  generatedtoken = UUID.randomUUID().toString();
 
         emailService.sendConfirmationEmail(user.getEmail(), generatedtoken);
         var token = Token.builder()
@@ -308,20 +308,20 @@ public class UserServiceImpl implements UserService {
 
     private UserPhoto saveUserPictureLocal(int userid, MultipartFile picture) {
 
-        String userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
+        var  userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
 
 
-        File userFolder = new File(userFolderPath);
+        var  userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
             userFolder.mkdirs();
         }
-        UUID uuid = UUID.randomUUID();
-        String modifedFileName = uuid + picture.getOriginalFilename();
-        String publicUrl = userid + File.separator + "Profile" + File.separator + modifedFileName;
-        String filePath = userFolderPath + File.separator + modifedFileName;
+       var  uuid = UUID.randomUUID();
+        var  modifedFileName = uuid + picture.getOriginalFilename();
+        var  publicUrl = userid + File.separator + "Profile" + File.separator + modifedFileName;
+        var  filePath = userFolderPath + File.separator + modifedFileName;
         try {
 
-            File savedFile = new File(filePath);
+           var  savedFile = new File(filePath);
             picture.transferTo(savedFile);
             return UserPhoto.builder()
                     .Url(publicUrl)
@@ -352,7 +352,7 @@ public class UserServiceImpl implements UserService {
         }
 
         var currentuser = getuser.get();
-        String generatedtoken = UUID.randomUUID().toString();
+        var  generatedtoken = UUID.randomUUID().toString();
         var token = PasswordRecoveryToken.builder()
                 .token(generatedtoken)
                 .createdAt(LocalDateTime.now())
@@ -369,7 +369,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public ResponseEntity<String> updatePassword(RecoverPasswordDto dto) {
-        System.out.println(dto);
+
 
         var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid token"));

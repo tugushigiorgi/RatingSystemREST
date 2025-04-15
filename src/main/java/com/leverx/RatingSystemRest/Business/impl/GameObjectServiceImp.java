@@ -89,7 +89,7 @@ public class GameObjectServiceImp  implements GameObjectService {
 
         try {
             gameObjectRepository.delete(currentObject);
-            Path path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
+           var path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
             Files.delete(path);
             return new ResponseEntity<>("Successfully deleted with id" + gameObjectId, HttpStatus.OK);
 
@@ -152,7 +152,7 @@ public class GameObjectServiceImp  implements GameObjectService {
 
     private GameObjectPicture updatePictureOnLocalFolder(String CurrentFileUrl, int userid, MultipartFile file) {
         try {
-            Path path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
+           var  path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
             Files.delete(path);
             return saveNewPictureOnLocalFolder(userid, file);
         } catch (IOException e) {
@@ -164,19 +164,19 @@ public class GameObjectServiceImp  implements GameObjectService {
 
 
     private GameObjectPicture saveNewPictureOnLocalFolder(int userid, MultipartFile picture) {
-        String userFolderPath = uploadDir + File.separator + userid + File.separator + "GAMES";
+        var  userFolderPath = uploadDir + File.separator + userid + File.separator + "GAMES";
 
-        File userFolder = new File(userFolderPath);
+        var  userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
             userFolder.mkdirs();
         }
-        UUID uuid = UUID.randomUUID();
-        String modifedFileName = uuid + picture.getOriginalFilename();
-        String publicUrl = userid + File.separator + "GAMES" + File.separator + modifedFileName;
-        String filePath = userFolderPath + File.separator + modifedFileName;
+        var  uuid = UUID.randomUUID();
+        var modifedFileName = uuid + picture.getOriginalFilename();
+        var publicUrl = userid + File.separator + "GAMES" + File.separator + modifedFileName;
+        var  filePath = userFolderPath + File.separator + modifedFileName;
         try {
 
-            File savedFile = new File(filePath);
+            var savedFile = new File(filePath);
             picture.transferTo(savedFile);
             return GameObjectPicture.builder()
                     .Url(publicUrl)
@@ -222,7 +222,7 @@ public class GameObjectServiceImp  implements GameObjectService {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
 
-        List<GameObjectDto> dtoList = data.stream()
+        var  dtoList = data.stream()
                 .map(GameObjectDto::toDto)
                 .toList();
 

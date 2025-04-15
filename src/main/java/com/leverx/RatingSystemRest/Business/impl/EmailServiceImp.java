@@ -28,8 +28,8 @@ public class EmailServiceImp implements EmailService {
 
     public void sendConfirmationEmail(String to, String Token) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            var  message = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(message, true);
             helper.setTo(to);
             helper.setSubject("LeverX Rating System Confirmation Email");
             helper.setText("Confirmation Code " + Token, true);
@@ -44,8 +44,8 @@ public class EmailServiceImp implements EmailService {
 
     public void sendRecoverLink(String email, String Token) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            var  message = mailSender.createMimeMessage();
+            var  helper = new MimeMessageHelper(message, true);
             helper.setTo(email);
             helper.setSubject("LeverX Recover Link");
             helper.setText(frontendPath + "reset" + "?token=" + Token);
