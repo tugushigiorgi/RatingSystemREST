@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -113,7 +114,7 @@ public class commentServiceImp implements commentService {
         var notApprovedReviews = commentRepository.AllNotApprovedReviews();
 
 
-        if (notApprovedReviews == null || notApprovedReviews.isEmpty()) {
+        if (CollectionUtils.isEmpty(notApprovedReviews)) {
             return Collections.emptyList();
         }
         return notApprovedReviews.stream().map(UserReviewsDto::toDto).collect(Collectors.toList());
