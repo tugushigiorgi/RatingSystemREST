@@ -1,8 +1,9 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
-import com.leverx.RatingSystemRest.Business.CommentService;
-import com.leverx.RatingSystemRest.Business.GameObjectService;
-import com.leverx.RatingSystemRest.Business.UserService;
+
+import com.leverx.RatingSystemRest.Business.impl.GameObjectServiceImp;
+import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
+import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
@@ -21,17 +22,17 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/seller")
 public class SellerController {
-    private final UserService userService;
-    private GameObjectService gameObjectService;
+    private final UserServiceImpl userServiceImpl;
+    private GameObjectServiceImp gameObjectService;
     private UserRepository userRepository;
 
-    private CommentService commentService;
+    private commentService commentService;
 
 
     @GetMapping("/games")
     public ResponseEntity<List<GameObjectDto>> MyGames(Authentication authentication) throws Exception {
 
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
 
             return gameObjectService.getGameObjectsBySellerId(currentUserId);
@@ -44,7 +45,7 @@ public class SellerController {
 
     @GetMapping("/reviews")
     public ResponseEntity<List<UserReviewsDto>> MyReviews(Authentication authentication) throws Exception {
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
             return commentService.getApprovedReviewsBySellerId(currentUserId);
         }
@@ -55,9 +56,9 @@ public class SellerController {
 
     @GetMapping("/info")
     public ResponseEntity<UserInfoDto> currenlysignedUserInfo(Authentication authentication) {
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
-            return userService.GetUserInfoById(currentUserId );
+            return userServiceImpl.getUserInfoById(currentUserId );
         }
         return null;
     }

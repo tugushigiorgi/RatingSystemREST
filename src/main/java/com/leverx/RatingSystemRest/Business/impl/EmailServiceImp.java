@@ -1,7 +1,6 @@
-package com.leverx.RatingSystemRest.Business;
+package com.leverx.RatingSystemRest.Business.impl;
 
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.leverx.RatingSystemRest.Business.Interfaces.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -10,10 +9,11 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-import java.time.LocalDateTime;
-
 @Service
-public class EmailService {
+//TODO - EACH SERVICE EACH INTERFACE
+//ALSO NAME  ENDS WITH IMPL
+//TODO UNECESSARY IMPORTS
+public class EmailServiceImp implements EmailService {
 
 
     private final JavaMailSender mailSender;
@@ -22,7 +22,7 @@ public class EmailService {
     @Value("${frontend.path}")
     private String frontendPath;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailServiceImp(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 

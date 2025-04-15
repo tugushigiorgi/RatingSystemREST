@@ -1,5 +1,7 @@
-package com.leverx.RatingSystemRest.Business;
+package com.leverx.RatingSystemRest.Business.impl;
 
+
+import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
@@ -20,7 +22,9 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class CommentService {
+//TODO LOGER ANNOTATION
+//TODO USE VAR WHENEVER POSSIBLE
+public class commentServiceImp implements commentService {
 
     private CommentRepository commentRepository;
 
@@ -123,7 +127,7 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
-    public ResponseEntity<String> ApproveUserReview(int commentId) {
+    public ResponseEntity<String> approveUserReview(int commentId) {
 
 
         var getcomment = commentRepository.findById(commentId)
@@ -136,7 +140,7 @@ public class CommentService {
         var userTotalApprovedComments = currentSeller.getComments().stream().filter(Comment::isApproved).toList();
 
         var CurrentRatingCount = userTotalApprovedComments.size();
-        var CurrentRatingSum = SumCurrentRating(userTotalApprovedComments);
+        var CurrentRatingSum = sumCurrentRating(userTotalApprovedComments);
 
         var NewRating = (CurrentRatingSum + getcomment.getRating()) / (CurrentRatingCount + 1);
         currentSeller.setTotalRating(NewRating);
@@ -151,7 +155,7 @@ public class CommentService {
     }
 
     @Transactional
-    public ResponseEntity<String> DeclineUserReview(int commentId) {
+    public ResponseEntity<String> declineUserReview(int commentId) {
         var getcomment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment not found"));
 
@@ -160,7 +164,7 @@ public class CommentService {
     }
 
 
-    public static double SumCurrentRating(List<Comment> comment) {
+    public static double sumCurrentRating(List<Comment> comment) {
         return comment.stream()
                 .mapToInt(Comment::getRating)
                 .sum();
