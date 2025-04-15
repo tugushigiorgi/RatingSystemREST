@@ -1,6 +1,4 @@
 package com.leverx.RatingSystemRest.Business.impl;
-
-
 import com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages;
 import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
@@ -15,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -114,6 +111,8 @@ public class commentServiceImp implements commentService {
 
     public List<UserReviewsDto> getAllNotApprovedReviews() {
         var notApprovedReviews = commentRepository.AllNotApprovedReviews();
+
+
         if (notApprovedReviews == null || notApprovedReviews.isEmpty()) {
             return Collections.emptyList();
         }

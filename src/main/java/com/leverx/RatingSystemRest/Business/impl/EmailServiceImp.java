@@ -1,13 +1,12 @@
 package com.leverx.RatingSystemRest.Business.impl;
-
 import com.leverx.RatingSystemRest.Business.Interfaces.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.EmailConstMessages.CONFIRMATION_EMAIL_SUBJECT;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.EmailConstMessages.RECOVERY_EMAIL_SUBJECT;
 
 @Service
 //TODO - EACH SERVICE EACH INTERFACE
@@ -31,7 +30,7 @@ public class EmailServiceImp implements EmailService {
             var  message = mailSender.createMimeMessage();
             var helper = new MimeMessageHelper(message, true);
             helper.setTo(to);
-            helper.setSubject("LeverX Rating System Confirmation Email");
+            helper.setSubject(CONFIRMATION_EMAIL_SUBJECT);
             helper.setText("Confirmation Code " + Token, true);
 
             mailSender.send(message);
@@ -47,7 +46,7 @@ public class EmailServiceImp implements EmailService {
             var  message = mailSender.createMimeMessage();
             var  helper = new MimeMessageHelper(message, true);
             helper.setTo(email);
-            helper.setSubject("LeverX Recover Link");
+            helper.setSubject(RECOVERY_EMAIL_SUBJECT);
             helper.setText(frontendPath + "reset" + "?token=" + Token);
             mailSender.send(message);
 
