@@ -1,11 +1,14 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
-import com.leverx.RatingSystemRest.Business.CommentService;
-import com.leverx.RatingSystemRest.Business.UserService;
+
+import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
+import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,15 +17,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin")
 @AllArgsConstructor
+@Slf4j
 public class AdminController {
 
-    private UserService userService;
 
-    private CommentService commentService;
+    private UserServiceImpl userServiceImpl;
 
+    private commentService commentService;
+
+    //TODO  uppercase -> lower case methods name
+    //GOOGle CHECKSTYLE
     @GetMapping("/users/requests")
     public ResponseEntity<List<AdminNotApprovedUserDto>> RegistrationRequestsList() {
-        return userService.getSellersRegistrationRequests();
+        return userServiceImpl.getSellersRegistrationRequests();
     }
 
 
@@ -30,7 +37,7 @@ public class AdminController {
     public ResponseEntity<String> approveRegistrationRequest(@PathVariable int id) {
 
 
-        return userService.AcceptSellerRegistrationRequest(id);
+        return userServiceImpl.acceptSellerRegistrationRequest(id);
     }
 
     @GetMapping("/comments/requests")
@@ -44,34 +51,34 @@ public class AdminController {
     public ResponseEntity<String> approveReviewRequest(@PathVariable int id) {
         System.out.println("Approving Review Request");
 
-        return commentService.ApproveUserReview(id);
+        return commentService.approveUserReview(id);
     }
 
     @DeleteMapping("/comments/decline/{id}")
     public ResponseEntity<String> declineReviewRequest(@PathVariable int id) {
 
 
-        return commentService.DeclineUserReview(id);
+        return commentService.declineUserReview(id);
     }
 
 
     @GetMapping("/user/registeredusers")
     public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUserList() {
 
-        return userService.DetailedRegisteredUsers();
+        return userServiceImpl.detailedRegisteredUsers();
 
     }
 
     @GetMapping("/user/registeredusers/{username}")
     public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUserListByUsername(@PathVariable String username) {
 
-        return userService.GetDetailedRegisteredUsersByUsername(username);
+        return userServiceImpl.getDetailedRegisteredUsersByUsername(username);
 
     }
 
     @DeleteMapping("/user/{id}")
     public ResponseEntity<String> DeleteSellerById(@PathVariable int id) {
-        return userService.DeleteById(id);
+        return userServiceImpl.deleteById(id);
     }
 
 

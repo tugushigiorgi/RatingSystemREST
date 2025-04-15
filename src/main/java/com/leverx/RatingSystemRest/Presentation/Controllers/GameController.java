@@ -1,7 +1,6 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
-
-import com.leverx.RatingSystemRest.Business.GameObjectService;
-import com.leverx.RatingSystemRest.Business.UserService;
+import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
+import com.leverx.RatingSystemRest.Business.Interfaces.GameObjectService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.UpdateGameObject;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.addGameObjectDto;
@@ -20,13 +19,13 @@ public class GameController {
 
     private GameObjectService gameObjectService;
     private UserRepository userRepository;
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
 
     @PostMapping
     public ResponseEntity<String> addGame(
            @Valid @ModelAttribute addGameObjectDto dto,
             @RequestParam("photo") MultipartFile photo, Authentication authentication) {
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
             return gameObjectService.add(dto, photo, currentUserId);
         }
@@ -38,7 +37,7 @@ public class GameController {
     @DeleteMapping("{id}")
     public ResponseEntity<String> deleteGame(@PathVariable int id, Authentication authentication) {
 
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
 
             return gameObjectService.remove(id, currentUserId);
@@ -49,7 +48,7 @@ public class GameController {
 
     @PutMapping("detailed")
     public ResponseEntity<String> updateGameWithPhoto(@Valid @ModelAttribute UpdateGameObject dto, @RequestParam("photo") MultipartFile photo, Authentication authentication) {
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
             return gameObjectService.update(dto, photo, currentUserId);
 
@@ -62,7 +61,7 @@ public class GameController {
 
     @PutMapping()
     public ResponseEntity<String> updateGameWithPhoto( @Valid @ModelAttribute UpdateGameObject dto, Authentication authentication) {
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userServiceImpl.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
             return gameObjectService.update(dto, null, currentUserId);
 

@@ -3,6 +3,7 @@ package com.leverx.RatingSystemRest.Business;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ class CommentServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private CommentService commentService;
+    private commentService commentService;
 
 
 

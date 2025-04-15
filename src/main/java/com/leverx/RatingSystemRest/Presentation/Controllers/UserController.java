@@ -1,6 +1,7 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
-import com.leverx.RatingSystemRest.Business.UserService;
+import com.leverx.RatingSystemRest.Business.Interfaces.UserService;
+import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.isAdminDto;
@@ -16,22 +17,22 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user")
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final UserService userService;
+
+    private final UserService userService ;
 
     @PutMapping("/password")
     public ResponseEntity<String> ChangePassword(@Valid @RequestBody ChangePasswordDto dto, Authentication authentication) {
 
-        var currentUserId = userService.RetriaveLogedUserId(authentication);
+        var currentUserId = userService .retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
-            return userService.ChangePassword(currentUserId, dto);
+            return userService.changePassword(currentUserId, dto);
         }
         return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/verifyrole")
     public ResponseEntity<isAdminDto> isAdmin(Authentication authentication) {
-        return userService.CheckifAdmin(authentication);
+        return userService.checkifAdmin(authentication);
     }
 
 

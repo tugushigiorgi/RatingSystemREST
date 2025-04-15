@@ -1,5 +1,6 @@
-package com.leverx.RatingSystemRest.Business;
+package com.leverx.RatingSystemRest.Business.impl;
 
+import com.leverx.RatingSystemRest.Business.Interfaces.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.*;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.*;
 import com.leverx.RatingSystemRest.Infrastructure.Security.JwtFactory;
@@ -33,19 +34,19 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @Service
-public class UserService {
+public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
     private final PasswordEncoder passwordEncoder;
     private final UserPhotoRepository userPhotoRepository;
-    private final EmailService emailService;
+    private final EmailServiceImp emailService;
     private final TokenRepository tokenRepository;
     private final passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
     private JwtFactory jwtFactory;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailService emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository, JwtFactory jwtFactory) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserPhotoRepository userPhotoRepository, EmailServiceImp emailService, TokenRepository tokenRepository, passwordRecoveryTokenRepository pwdRecoveryTokenRepository, JwtFactory jwtFactory) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userPhotoRepository = userPhotoRepository;
@@ -58,16 +59,24 @@ public class UserService {
     public ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests() {
 
         var getlist = userRepository.notApprovedSellersList();
+        // TODO: use util classes to check null or empty list
+        // CollectionUtils.isEmpty()
         if (getlist == null || getlist.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        var mapToDtoList = getlist.stream().map(AdminNotApprovedUserDto::toDto).toList();
+        // TODO: write code base on this example:
+        var mapToDtoList = getlist.stream()
+                .map(AdminNotApprovedUserDto::toDto)
+                .toList();
         return new ResponseEntity<>(mapToDtoList, HttpStatus.OK);
 
     }
 
-    public ResponseEntity<String> AcceptSellerRegistrationRequest(int sellerId) {
+    public ResponseEntity<String> acceptSellerRegistrationRequest(int sellerId) {
         var currentSeller = userRepository.findById(sellerId)
+                // TODO: try to check all examples when we should use static import
+                // TODO: chekc how to replace it to constant(messages) + additional info about seller
+//                // String.format("This is the string: %s","test")
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Seller not found"));
 
         if (!currentSeller.isHasVerifiedEmail()) {
@@ -80,7 +89,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<List<DetailedUserDto>> DetailedRegisteredUsers() {
+    public ResponseEntity<List<DetailedUserDto>> detailedRegisteredUsers() {
         var users = userRepository.ApprovedSellersList();
 
         if (users == null || users.isEmpty()) {
@@ -91,7 +100,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<List<DetailedUserDto>> GetDetailedRegisteredUsersByUsername(String username) {
+    public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUsersByUsername(String username) {
         var users = userRepository.GetRegisteredSellerByUsername(username);
         if (users.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -101,7 +110,7 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseEntity<String> DeleteById(int userId) {
+    public ResponseEntity<String> deleteById(int userId) {
 
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
@@ -147,7 +156,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<UserInfoDto> GetUserInfoById(int userId) {
+    public ResponseEntity<UserInfoDto> getUserInfoById(int userId) {
         var getuser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
         var toDto = UserInfoDto.toDto(getuser);
@@ -155,7 +164,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<String> ChangePassword(int currentuserId, ChangePasswordDto dto) {
+    public ResponseEntity<String> changePassword(int currentuserId, ChangePasswordDto dto) {
 
         var getuser = userRepository.findById(currentuserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
@@ -195,7 +204,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<SellerProfileDto> GetSellerProfileById(int userId) {
+    public ResponseEntity<SellerProfileDto> getSellerProfileById(int userId) {
 
         var currentSeller = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
@@ -237,19 +246,19 @@ public class UserService {
 
         userRepository.save(createUser);
 
-        var savephoto = SaveUserPictureLocal(createUser.getId(), photo);
+        var savephoto = saveUserPictureLocal(createUser.getId(), photo);
         if (savephoto != null) {
             savephoto.setUser(createUser);
             userPhotoRepository.save(savephoto);
         } else {
             return new ResponseEntity<>("picture can not be saved", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        SendRegistrationEmail(createUser);
+        sendRegistrationEmail(createUser);
         return new ResponseEntity<>("User registered successfully, Confirmation Code sent", HttpStatus.OK);
     }
 
 
-    public void SendRegistrationEmail(User user) {
+    public void sendRegistrationEmail(User user) {
 
         String generatedtoken = UUID.randomUUID().toString();
 
@@ -265,7 +274,7 @@ public class UserService {
     }
 
     @Transactional
-    public ResponseEntity<String> ActivateAccount(String token) {
+    public ResponseEntity<String> activateAccount(String token) {
 
         var savedToken = tokenRepository.findByToken(token);
         if (savedToken.isEmpty()) {
@@ -283,7 +292,7 @@ public class UserService {
         if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
 
             tokenRepository.deleteById(savedToken.get().getId());
-            SendRegistrationEmail(user);
+            sendRegistrationEmail(user);
 
             return new ResponseEntity<>("token expired, New email sent to email", HttpStatus.BAD_REQUEST);
         }
@@ -297,7 +306,7 @@ public class UserService {
     }
 
 
-    private UserPhoto SaveUserPictureLocal(int userid, MultipartFile picture) {
+    private UserPhoto saveUserPictureLocal(int userid, MultipartFile picture) {
 
         String userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
 
@@ -331,7 +340,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<String> SendRecoverCode(String email) {
+    public ResponseEntity<String> sendRecoverCode(String email) {
         var getuser = userRepository.findByEmail(email);
         if (getuser.isEmpty()) {
             return new ResponseEntity<>("User  not found with email addresss", HttpStatus.NOT_FOUND);
@@ -392,7 +401,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<jwtDto> Login(AuthenticationManager authenticationManager, Logindto logindto) {
+    public ResponseEntity<jwtDto> login(AuthenticationManager authenticationManager, Logindto logindto) {
 
         try {
             var getuser = userRepository.findByEmail(logindto.getEmail());
@@ -416,7 +425,7 @@ public class UserService {
     }
 
 
-    public int RetriaveLogedUserId(Authentication authentication) {
+    public int retriaveLogedUserId(Authentication authentication) {
         if (authentication.getName() != null) {
             var user = userRepository.findByEmail(authentication.getName());
 
@@ -430,7 +439,7 @@ public class UserService {
     }
 
 
-    public ResponseEntity<isAdminDto> CheckifAdmin(Authentication authentication) {
+    public ResponseEntity<isAdminDto> checkifAdmin(Authentication authentication) {
         var getusr = userRepository.findByEmail(authentication.getName());
         if (getusr.isPresent()) {
             if (getusr.get().getRole().equals(UserRoleEnum.ADMIN)) {

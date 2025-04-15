@@ -1,5 +1,6 @@
 package com.leverx.RatingSystemRest.Business;
 
+import com.leverx.RatingSystemRest.Business.impl.GameObjectServiceImp;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
@@ -30,7 +31,7 @@ class GameObjectServiceTest {
     private GameObjectRepository gameObjectRepository;
 
     @InjectMocks
-    private GameObjectService gameObjectService;
+    private GameObjectServiceImp gameObjectService;
 
     @Test
     void testGetGameObjectsBySellerId_SellerNotFound() {

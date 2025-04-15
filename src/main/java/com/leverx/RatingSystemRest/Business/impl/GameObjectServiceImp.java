@@ -1,5 +1,6 @@
-package com.leverx.RatingSystemRest.Business;
+package com.leverx.RatingSystemRest.Business.impl;
 
+import com.leverx.RatingSystemRest.Business.Interfaces.GameObjectService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObjectPicture;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.GameObjectPictureRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
@@ -26,14 +27,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 @Data
 @Service
-public class GameObjectService {
+//TODO DOUBLE CHECK THIS ISSUE LETTER
+public class GameObjectServiceImp  implements GameObjectService {
+    //TODO ADD ALL FINAL MODIFER WHEN POSSIBLE
     private final UserPhotoRepository userPhotoRepository;
     private GameObjectRepository gameObjectRepository;
     private UserRepository userRepository;
@@ -42,7 +44,7 @@ public class GameObjectService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public GameObjectService(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository, GameObjectPictureRepository gameObjectPictureRepository) {
+    public GameObjectServiceImp(GameObjectRepository gameObjectRepository, UserRepository userRepository, UserPhotoRepository userPhotoRepository, GameObjectPictureRepository gameObjectPictureRepository) {
         this.gameObjectRepository = gameObjectRepository;
         this.userRepository = userRepository;
         this.userPhotoRepository = userPhotoRepository;
@@ -125,7 +127,7 @@ public class GameObjectService {
             currentObject.setText(dto.getText());
         }
         if (photo != null) {
-            var updatePicture = UpdatePictureOnLocalFolder(currentObject.getPicture().getUrl(), userId, photo);
+            var updatePicture = updatePictureOnLocalFolder(currentObject.getPicture().getUrl(), userId, photo);
             if (updatePicture != null) {
                 currentObject.setPicture(updatePicture);
                 currentObject.setUpdated_at(LocalDateTime.now());
@@ -148,7 +150,7 @@ public class GameObjectService {
     }
 
 
-    private GameObjectPicture UpdatePictureOnLocalFolder(String CurrentFileUrl, int userid, MultipartFile file) {
+    private GameObjectPicture updatePictureOnLocalFolder(String CurrentFileUrl, int userid, MultipartFile file) {
         try {
             Path path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
             Files.delete(path);

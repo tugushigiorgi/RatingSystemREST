@@ -1,6 +1,7 @@
 package com.leverx.RatingSystemRest.Business;
 
 
+import com.leverx.RatingSystemRest.Business.Interfaces.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
@@ -32,28 +33,19 @@ class UserServiceTest {
 
         String username = "giorgii";
         when(userRepository.GetRegisteredSellerByUsername(username)).thenReturn(Collections.emptyList());
-        ResponseEntity<List<DetailedUserDto>> response = userService.GetDetailedRegisteredUsersByUsername(username);
+        ResponseEntity<List<DetailedUserDto>> response = userService.getDetailedRegisteredUsersByUsername(username);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
     }
 
     @Test
     void testGetTopRatedSellers_SellersNotFound() {
-         when(userRepository.findTop5RatedSellers()).thenReturn(null);
-         ResponseEntity<List<UserInfoDto>> response = userService.getTopRatedSellers();
-         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+                 when(userRepository.findTop5RatedSellers()).thenReturn(null);
+        ResponseEntity<List<UserInfoDto>> response = userService.getTopRatedSellers();
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         assertNull(response.getBody());
     }
 
-//    @Test
-//    void testGetSellerProfileById_SellerNotFound() {
-//        int userId = 1;
-//        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-//
-//        ResponseEntity<SellerProfileDto> response = userService.GetSellerProfileById(userId);
-//
-//        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-//    }
 
 
 

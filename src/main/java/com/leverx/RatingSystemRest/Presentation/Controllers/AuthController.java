@@ -1,6 +1,6 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
-import com.leverx.RatingSystemRest.Business.UserService;
+import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.jwtDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.Logindto;
@@ -20,39 +20,41 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/auth")
 @AllArgsConstructor
 public class AuthController {
-    private final UserService userService;
+
+
+    private final UserServiceImpl userServiceImpl;
 
     private AuthenticationManager authenticationManager;
     @PostMapping("/register")
     public ResponseEntity<String> RegisterUser(@ModelAttribute RegisterUserDto dto,    @RequestParam("photo") MultipartFile photo){
 
-        return userService.registerUser(dto,photo);
+        return userServiceImpl.registerUser(dto,photo);
 
 
     }
     @PostMapping("/login")
     public ResponseEntity<jwtDto> Login(@Valid @RequestBody Logindto loginDTO ) throws InternalAuthenticationServiceException {
 
-        return  userService.Login(authenticationManager, loginDTO);
+        return  userServiceImpl.login(authenticationManager, loginDTO);
 
     }
     @PostMapping("/recovercode/{email}")
     public ResponseEntity<String> PasswordRecoverCodeSend(@PathVariable String email){
 
-        return userService.SendRecoverCode(email);
+        return userServiceImpl.sendRecoverCode(email);
 
     }
 
     @PostMapping("/updatepassword")
     public ResponseEntity<String> ChangePassword( @Valid @RequestBody RecoverPasswordDto dto){
 
-            return  userService.updatePassword(dto);
+            return  userServiceImpl.updatePassword(dto);
 
     }
     @PostMapping("/verify/{code}")
     public ResponseEntity<String> verifyEmailCode(@PathVariable String code){
 
-        return userService.ActivateAccount(code);
+        return userServiceImpl.activateAccount(code);
 
     }
     @PostMapping("/logout")

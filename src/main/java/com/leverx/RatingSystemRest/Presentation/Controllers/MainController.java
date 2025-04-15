@@ -1,10 +1,11 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 
-import com.leverx.RatingSystemRest.Business.CommentService;
-import com.leverx.RatingSystemRest.Business.EmailService;
-import com.leverx.RatingSystemRest.Business.GameObjectService;
-import com.leverx.RatingSystemRest.Business.UserService;
+
+import com.leverx.RatingSystemRest.Business.impl.EmailServiceImp;
+import com.leverx.RatingSystemRest.Business.impl.GameObjectServiceImp;
+import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
+import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
@@ -21,14 +22,14 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/main")
 public class MainController {
-    private UserService userService;
-    private EmailService emailService;
-    private GameObjectService gameObjectService;
-    private CommentService commentService;
+    private UserServiceImpl userServiceImpl;
+    private EmailServiceImp emailService;
+    private GameObjectServiceImp gameObjectService;
+    private commentService commentService;
     @GetMapping("/topselers")
     public ResponseEntity<List<UserInfoDto>> topRatedSelelrs() {
 
-        return userService.getTopRatedSellers();
+        return userServiceImpl.getTopRatedSellers();
 
     }
 
@@ -36,7 +37,7 @@ public class MainController {
     @GetMapping("/SellerProfile/{sellerId}")
     public ResponseEntity<SellerProfileDto> getSellerProfileData(@PathVariable int sellerId) {
 
-        return userService.GetSellerProfileById(sellerId);
+        return userServiceImpl.getSellerProfileById(sellerId);
 
     }
 
