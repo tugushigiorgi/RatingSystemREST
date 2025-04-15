@@ -34,7 +34,7 @@ public class commentServiceImp implements commentService {
     public ResponseEntity<String> add(addCommentDto dto) {
 
         var currentSeller = userRepository.findById(dto.sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
-        boolean hasMatchingAnonymousId = currentSeller.getComments().stream().anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
+        var  hasMatchingAnonymousId = currentSeller.getComments().stream().anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
         if (hasMatchingAnonymousId) {
             return new ResponseEntity<>("anonymous with given id  already submited review", HttpStatus.BAD_REQUEST);
         }
@@ -112,7 +112,7 @@ public class commentServiceImp implements commentService {
 
 
     public List<UserReviewsDto> getAllNotApprovedReviews() {
-        List<Comment> notApprovedReviews = commentRepository.AllNotApprovedReviews();
+        var notApprovedReviews = commentRepository.AllNotApprovedReviews();
         if (notApprovedReviews == null || notApprovedReviews.isEmpty()) {
             return Collections.emptyList();
         }
