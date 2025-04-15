@@ -25,7 +25,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,11 +35,12 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMes
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.PICTURE_CANNOT_BE_SAVED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.*;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 
 @Data
 @Service
 //TODO DOUBLE CHECK THIS ISSUE LETTER
-public class GameObjectServiceImp  implements GameObjectService {
+public class GameObjectServiceImp implements GameObjectService {
     //TODO ADD ALL FINAL MODIFER WHEN POSSIBLE
     private final UserPhotoRepository userPhotoRepository;
     private final GameObjectRepository gameObjectRepository;
@@ -59,10 +59,10 @@ public class GameObjectServiceImp  implements GameObjectService {
 
     public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId) {
         var currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
         var savedPicture = saveNewPictureOnLocalFolder(userId, photo);
         if (savedPicture == null) {
-            return new ResponseEntity<>(PICTURE_CANNOT_BE_SAVED, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(PICTURE_CANNOT_BE_SAVED, INTERNAL_SERVER_ERROR);
         }
         var gameObject = GameObject.builder()
                 .price(dto.getPrice())
@@ -75,7 +75,7 @@ public class GameObjectServiceImp  implements GameObjectService {
         savedPicture.setGameObject(gameObject);
         gameObjectRepository.save(gameObject);
 
-        return new ResponseEntity<>(GAME_ADDED, HttpStatus.OK);
+        return new ResponseEntity<>(GAME_ADDED, OK);
     }
 
 
@@ -83,24 +83,24 @@ public class GameObjectServiceImp  implements GameObjectService {
     public ResponseEntity<String> remove(int gameObjectId, int userId) {
 
         var getcurrentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
         var currentObject = gameObjectRepository.findById(gameObjectId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, GAME_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND));
 
         if (!Objects.equals(currentObject.getUser().getId(), currentObject.getUser().getId())) {
 
-            return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
         }
 
         try {
             gameObjectRepository.delete(currentObject);
-           var path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
+            var path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
             Files.delete(path);
-            return new ResponseEntity<>(SUCCESSFULLY_DELETED_WITH_ID + gameObjectId, HttpStatus.OK);
+            return new ResponseEntity<>(SUCCESSFULLY_DELETED_WITH_ID + gameObjectId, OK);
 
         } catch (Exception e) {
-            return new ResponseEntity<>(SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(SOMETHING_WENT_WRONG, INTERNAL_SERVER_ERROR);
 
         }
 
@@ -111,15 +111,15 @@ public class GameObjectServiceImp  implements GameObjectService {
     public ResponseEntity<String> update(UpdateGameObject dto, MultipartFile photo, int userId) {
 
         var currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
         var currentObject = gameObjectRepository.findById(dto.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, GAME_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND));
 
 
         if (currentObject.getUser().getId() != currentObject.getUser().getId()) {
 
-            return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
         }
 
 
@@ -141,7 +141,7 @@ public class GameObjectServiceImp  implements GameObjectService {
                 gameObjectPictureRepository.delete(currentObject.getPicture());
                 gameObjectRepository.save(currentObject);
                 gameObjectPictureRepository.save(updatePicture);
-                return new ResponseEntity<>(OBJECT_UPDATED, HttpStatus.OK);
+                return new ResponseEntity<>(OBJECT_UPDATED, OK);
 
             }
 
@@ -151,35 +151,33 @@ public class GameObjectServiceImp  implements GameObjectService {
         gameObjectRepository.save(currentObject);
 
 
-        return new ResponseEntity<>(OBJECT_UPDATED, HttpStatus.OK);
+        return new ResponseEntity<>(OBJECT_UPDATED, OK);
 
     }
 
 
     private GameObjectPicture updatePictureOnLocalFolder(String CurrentFileUrl, int userid, MultipartFile file) {
         try {
-           var  path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
+            var path = Paths.get(uploadDir + File.separator + CurrentFileUrl);
             Files.delete(path);
             return saveNewPictureOnLocalFolder(userid, file);
         } catch (IOException e) {
             return null;
         }
-
-
-    }
+        }
 
 
     private GameObjectPicture saveNewPictureOnLocalFolder(int userid, MultipartFile picture) {
-        var  userFolderPath = uploadDir + File.separator + userid + File.separator + "GAMES";
+        var userFolderPath = uploadDir + File.separator + userid + File.separator + "GAMES";
 
-        var  userFolder = new File(userFolderPath);
+        var userFolder = new File(userFolderPath);
         if (!userFolder.exists()) {
             userFolder.mkdirs();
         }
-        var  uuid = UUID.randomUUID();
+        var uuid = UUID.randomUUID();
         var modifedFileName = uuid + picture.getOriginalFilename();
         var publicUrl = userid + File.separator + "GAMES" + File.separator + modifedFileName;
-        var  filePath = userFolderPath + File.separator + modifedFileName;
+        var filePath = userFolderPath + File.separator + modifedFileName;
         try {
 
             var savedFile = new File(filePath);
@@ -202,12 +200,12 @@ public class GameObjectServiceImp  implements GameObjectService {
     public ResponseEntity<List<GameObjectDto>> getGameObjectsBySellerId(int sellerId) throws Exception {
 
         var getUser = userRepository.findById(sellerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND));
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
         var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
 
         if (CollectionUtils.isEmpty(getGames)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
         var toDto = getGames.stream().map(GameObjectDto::toDto).toList();
         return ResponseEntity.ok(toDto);
@@ -225,10 +223,10 @@ public class GameObjectServiceImp  implements GameObjectService {
         }
 
         if (CollectionUtils.isEmpty(data)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(NO_CONTENT);
         }
 
-        var  dtoList = data.stream()
+        var dtoList = data.stream()
                 .map(GameObjectDto::toDto)
                 .toList();
 
