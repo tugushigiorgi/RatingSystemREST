@@ -37,10 +37,10 @@ import java.util.UUID;
 public class GameObjectServiceImp  implements GameObjectService {
     //TODO ADD ALL FINAL MODIFER WHEN POSSIBLE
     private final UserPhotoRepository userPhotoRepository;
-    private GameObjectRepository gameObjectRepository;
-    private UserRepository userRepository;
-    private GameObjectPictureRepository gameObjectPictureRepository;
-    private UserPhotoRepository UserPhotoRepository;
+    private final GameObjectRepository gameObjectRepository;
+    private final UserRepository userRepository;
+    private final GameObjectPictureRepository gameObjectPictureRepository;
+
     @Value("${file.upload-dir}")
     private String uploadDir;
 

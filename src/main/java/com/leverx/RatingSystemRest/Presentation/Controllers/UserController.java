@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
 
-    private final UserService userService ;
+    private final UserService userService;
 
     @PutMapping("/password")
     public ResponseEntity<String> ChangePassword(@Valid @RequestBody ChangePasswordDto dto, Authentication authentication) {
 
-        var currentUserId = userService .retriaveLogedUserId(authentication);
+        var currentUserId = userService.retriaveLogedUserId(authentication);
         if (currentUserId != 0) {
             return userService.changePassword(currentUserId, dto);
         }

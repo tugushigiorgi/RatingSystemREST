@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/comment")
 public class CommentController {
-        commentService commentService;
+        private final commentService commentService;
         public CommentController(commentService commentService) {
             this.commentService = commentService;
         }

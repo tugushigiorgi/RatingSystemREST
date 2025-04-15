@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 //TODO USE VAR WHENEVER POSSIBLE
 public class commentServiceImp implements commentService {
 
-    private CommentRepository commentRepository;
+    private final CommentRepository commentRepository;
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
 
     public ResponseEntity<String> add(addCommentDto dto) {

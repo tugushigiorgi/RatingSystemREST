@@ -24,7 +24,7 @@ public class AuthController {
 
     private final UserServiceImpl userServiceImpl;
 
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
     @PostMapping("/register")
     public ResponseEntity<String> RegisterUser(@ModelAttribute RegisterUserDto dto,    @RequestParam("photo") MultipartFile photo){
 
