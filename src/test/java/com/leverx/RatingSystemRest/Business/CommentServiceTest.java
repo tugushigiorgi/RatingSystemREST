@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -41,7 +41,7 @@ class CommentServiceTest {
 
     @Test
     void addComment_WhenSellerDoesNotExist_ShouldThrowException() {
-        addCommentDto dto = new addCommentDto(5, 1, "Great seller!", 123);
+        AddCommentDto dto = new AddCommentDto(5, 1, "Great seller!", 123);
         when(userRepository.findById(dto.getSellerId())).thenReturn(Optional.empty());
 
         assertThrows(ResponseStatusException.class, () -> commentService.add(dto));

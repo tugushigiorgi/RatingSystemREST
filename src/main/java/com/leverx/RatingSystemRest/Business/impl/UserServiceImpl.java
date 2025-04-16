@@ -1,21 +1,58 @@
 package com.leverx.RatingSystemRest.Business.impl;
 
-import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.*;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.*;
-import static org.springframework.http.HttpStatus.*;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FAILED_TO_DELETE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FOLDER_AND_ITS_CONTENT_DELETED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FOLDER_DOES_NOT_EXIST;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.PICTURE_CANNOT_BE_SAVED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.ACCOUNT_IS_ALREADY_VERIFIED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.AUTHENTICATION_FAILED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_ALREADY_EXISTS;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_SENT_SUCCESSFULLY;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INCORRECT_PASSWORD;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_CHANGED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_IS_SAME;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_UPDATED_SUCCESSFULLY;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_APPROVED_SELLER_REGISTRATION;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_ENABLED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_NOT_FOUND;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_DELETED_SUCCESSFULLY;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND_WITH_EMAIL;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_REGISTERED_SUCCESSFULLY;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 import com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages;
 import com.leverx.RatingSystemRest.Business.Interfaces.UserService;
-import com.leverx.RatingSystemRest.Infrastructure.Entities.*;
-import com.leverx.RatingSystemRest.Infrastructure.Repositories.*;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.PasswordRecoveryToken;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.Token;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.UserPhoto;
+import com.leverx.RatingSystemRest.Infrastructure.Entities.UserRoleEnum;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.PasswordRecTokenRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.TokenRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoRepository;
+import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Security.JwtFactory;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.isAdminDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.jwtDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.IsAdminDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.JwtDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.*;
-
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.LoginDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.RegisterUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +64,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -56,10 +92,15 @@ public class UserServiceImpl implements UserService {
   private final UserPhotoRepository userPhotoRepository;
   private final EmailServiceImp emailService;
   private final TokenRepository tokenRepository;
-  private final passwordRecoveryTokenRepository pwdRecoveryTokenRepository;
+  private final PasswordRecTokenRepository pwdRecoveryTokenRepository;
   private final JwtFactory jwtFactory;
 
 
+  /**
+   * Retrieves all pending seller registration requests.
+   *
+   * @return a list of users pending approval as {@link AdminNotApprovedUserDto}, or NO_CONTENT if none found.
+   */
   public ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests() {
 
     var getlist = userRepository.notApprovedSellersList();
@@ -70,6 +111,12 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(mapToDtoList, OK);
   }
 
+  /**
+   * Approves a seller registration by ID.
+   *
+   * @param sellerId the ID of the seller to approve
+   * @return success message or BAD_REQUEST if seller is not found or not email-verified
+   */
   public ResponseEntity<String> acceptSellerRegistrationRequest(int sellerId) {
     var currentSeller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
     if (!currentSeller.isHasVerifiedEmail()) {
@@ -81,7 +128,11 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(SUCCESSFULLY_APPROVED_SELLER_REGISTRATION, OK);
   }
 
-
+  /**
+   * Retrieves a detailed list of approved seller users.
+   *
+   * @return list of {@link DetailedUserDto} or NO_CONTENT
+   */
   public ResponseEntity<List<DetailedUserDto>> detailedRegisteredUsers() {
     var users = userRepository.approvedSellersList();
     if (CollectionUtils.isEmpty(users)) {
@@ -91,9 +142,14 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(toDtoList, OK);
   }
 
-
+  /**
+   * Retrieves detailed seller information filtered by username.
+   *
+   * @param username the seller's username
+   * @return a list of matching sellers or NO_CONTENT
+   */
   public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUsersByUsername(String username) {
-    var users = userRepository.GetRegisteredSellerByUsername(username);
+    var users = userRepository.getRegisteredSellerByUsername(username);
     if (users.isEmpty()) {
       return new ResponseEntity<>(NO_CONTENT);
     }
@@ -102,6 +158,12 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(toDtoList, OK);
   }
 
+  /**
+   * Deletes a user by ID along with their profile picture folder.
+   *
+   * @param userId the ID of the user to delete
+   * @return a confirmation message or error if user not found
+   */
   @Transactional
   public ResponseEntity<String> deleteById(int userId) {
 
@@ -113,7 +175,12 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(USER_DELETED_SUCCESSFULLY, OK);
   }
 
-
+  /**
+   * Deletes a user's folder and its contents from the filesystem.
+   *
+   * @param folderUrl the path to the folder
+   * @return true if deleted successfully, false otherwise
+   */
   private boolean deleteUserFolderByUrl(String folderUrl) {
     try {
       var folderPath = Paths.get(folderUrl);
@@ -130,6 +197,12 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  /**
+   * Recursively deletes all files and folders in the specified path.
+   *
+   * @param path the path to delete
+   * @throws IOException if any file or directory cannot be deleted
+   */
   private static void deleteRecursively(Path path) throws IOException {
     try (Stream<Path> files = Files.walk(path)) {
       files.sorted(Comparator.reverseOrder()).forEach(p -> {
@@ -146,7 +219,12 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-
+  /**
+   * Fetches public information for a user by ID.
+   *
+   * @param userId the ID of the user
+   * @return {@link UserInfoDto} or NOT_FOUND if user is missing
+   */
   public ResponseEntity<UserInfoDto> getUserInfoById(int userId) {
     var getuser = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.SELLER_NOT_FOUND));
     var toDto = UserInfoDto.toDto(getuser);
@@ -155,9 +233,11 @@ public class UserServiceImpl implements UserService {
 
 
   /**
-   * @param currentuserId
-   * @param dto
-   * @return
+   * Allows a user to change their password.
+   *
+   * @param currentuserId the ID of the user requesting the change
+   * @param dto           the DTO containing old and new password
+   * @return success or error message
    */
   public ResponseEntity<String> changePassword(int currentuserId, ChangePasswordDto dto) {
 
@@ -182,7 +262,11 @@ public class UserServiceImpl implements UserService {
 
   }
 
-
+  /**
+   * Fetches a list of top-rated seller users.
+   *
+   * @return list of {@link UserInfoDto} or NO_CONTENT if none
+   */
   public ResponseEntity<List<UserInfoDto>> getTopRatedSellers() {
 
     var getlist = userRepository.findTop5RatedSellers();
@@ -195,7 +279,12 @@ public class UserServiceImpl implements UserService {
 
   }
 
-
+  /**
+   * Retrieves a seller's full profile by user ID, including game objects.
+   *
+   * @param userId the seller's user ID
+   * @return {@link SellerProfileDto} or NO_CONTENT if no games
+   */
   public ResponseEntity<SellerProfileDto> getSellerProfileById(int userId) {
 
     var currentSeller = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.SELLER_NOT_FOUND));
@@ -211,13 +300,20 @@ public class UserServiceImpl implements UserService {
   }
 
 
+  /**
+   * Registers a new user with optional profile photo.
+   *
+   * @param dto   user registration data
+   * @param photo the profile picture
+   * @return success message or error
+   */
   public ResponseEntity<String> registerUser(RegisterUserDto dto, MultipartFile photo) {
 
     var checkifExists = userRepository.findByEmail(dto.email);
     if (checkifExists.isPresent()) {
       return new ResponseEntity<>(EMAIL_ALREADY_EXISTS, BAD_REQUEST);
     }
-    var createUser = User.builder().created_at(LocalDateTime.now()).first_name(dto.name).last_name(dto.surname).email(dto.email).password(passwordEncoder.encode(dto.password)).isApprovedByAdmin(false).role(UserRoleEnum.SELLER).hasVerifiedEmail(false).build();
+    var createUser = User.builder().createdAt(LocalDateTime.now()).firstName(dto.name).lastName(dto.surname).email(dto.email).password(passwordEncoder.encode(dto.password)).isApprovedByAdmin(false).role(UserRoleEnum.SELLER).hasVerifiedEmail(false).build();
 
     userRepository.save(createUser);
     var savephoto = saveUserPictureLocal(createUser.getId(), photo);
@@ -231,16 +327,26 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(USER_REGISTERED_SUCCESSFULLY, OK);
   }
 
-
+  /**
+   * Sends a confirmation email after registration with an activation token.
+   *
+   * @param user the user to send the token to
+   */
   public void sendRegistrationEmail(User user) {
 
     var generatedToken = UUID.randomUUID().toString();
     emailService.sendConfirmationEmail(user.getEmail(), generatedToken);
-    var token = Token.builder().token(generatedToken).created_at(LocalDateTime.now()).expires_at(LocalDateTime.now().plusHours(24)).user(user).build();
+    var token = Token.builder().token(generatedToken).createdAt(LocalDateTime.now()).expiresAt(LocalDateTime.now().plusHours(24)).user(user).build();
     tokenRepository.save(token);
 
   }
 
+  /**
+   * Activates a user account via registration token.
+   *
+   * @param token the activation token
+   * @return success or error response depending on validity and expiration
+   */
   @Transactional
   public ResponseEntity<String> activateAccount(String token) {
 
@@ -254,7 +360,7 @@ public class UserServiceImpl implements UserService {
       return new ResponseEntity<>(ACCOUNT_IS_ALREADY_VERIFIED, BAD_REQUEST);
     }
 
-    if (LocalDateTime.now().isAfter(savedToken.get().getExpires_at())) {
+    if (LocalDateTime.now().isAfter(savedToken.get().getExpiresAt())) {
 
       tokenRepository.deleteById(savedToken.get().getId());
       sendRegistrationEmail(user);
@@ -268,7 +374,13 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(SUCCESSFULLY_ENABLED, OK);
   }
 
-
+  /**
+   * Saves a profile picture to the local file system and returns a {@link UserPhoto} entity.
+   *
+   * @param userid  the user ID
+   * @param picture the uploaded file
+   * @return the photo metadata, or null if failed
+   */
   private UserPhoto saveUserPictureLocal(int userid, MultipartFile picture) {
 
     var userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
@@ -284,7 +396,7 @@ public class UserServiceImpl implements UserService {
 
       var savedFile = new File(filePath);
       picture.transferTo(savedFile);
-      return UserPhoto.builder().Url(publicUrl).size(picture.getSize()).Extension(picture.getContentType()).photoName(modifiedFileName).build();
+      return UserPhoto.builder().url(publicUrl).size(picture.getSize()).extension(picture.getContentType()).photoName(modifiedFileName).build();
 
     } catch (IOException e) {
 
@@ -296,7 +408,12 @@ public class UserServiceImpl implements UserService {
 
   }
 
-
+  /**
+   * Sends a password recovery code to the user's email.
+   *
+   * @param email the user's email address
+   * @return success or error message
+   */
   public ResponseEntity<String> sendRecoverCode(String email) {
     var getuser = userRepository.findByEmail(email);
     if (getuser.isEmpty()) {
@@ -322,6 +439,12 @@ public class UserServiceImpl implements UserService {
     return new ResponseEntity<>(EMAIL_SENT_SUCCESSFULLY, OK);
   }
 
+  /**
+   * Updates the password using a valid recovery token.
+   *
+   * @param dto the DTO containing token and new passwords
+   * @return success or error response
+   */
   public ResponseEntity<String> updatePassword(RecoverPasswordDto dto) {
 
     var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken()).orElseThrow(() -> new IllegalArgumentException(UserConstMessages.INVALID_TOKEN));
@@ -336,13 +459,19 @@ public class UserServiceImpl implements UserService {
     }
     user.setPassword(passwordEncoder.encode(dto.getPassword()));
     userRepository.save(user);
-    pwdRecoveryTokenRepository.DeleteByID(savedToken.getId());
+    pwdRecoveryTokenRepository.deletebyId(savedToken.getId());
 
     return ResponseEntity.ok(PASSWORD_UPDATED_SUCCESSFULLY);
   }
 
-
-  public ResponseEntity<jwtDto> login(AuthenticationManager authenticationManager, Logindto logindto) {
+  /**
+   * Authenticates a user and returns a JWT if successful.
+   *
+   * @param authenticationManager the auth manager
+   * @param logindto              login credentials
+   * @return JWT token with role or UNAUTHORIZED
+   */
+  public ResponseEntity<JwtDto> login(AuthenticationManager authenticationManager, LoginDto logindto) {
 
     try {
       var getuser = userRepository.findByEmail(logindto.getEmail());
@@ -353,7 +482,7 @@ public class UserServiceImpl implements UserService {
       }
       authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
       var token = jwtFactory.generateToken(getuser.get());
-      var dto = new jwtDto(token, getuser.get().getRole().toString());
+      var dto = new JwtDto(token, getuser.get().getRole().toString());
       return ResponseEntity.ok(dto);
 
     } catch (Exception e) {
@@ -363,7 +492,12 @@ public class UserServiceImpl implements UserService {
 
   }
 
-
+  /**
+   * Retrieves the user ID from an authentication object.
+   *
+   * @param authentication the auth object
+   * @return the user ID or 0 if not found
+   */
   public int retriaveLogedUserId(Authentication authentication) {
     if (authentication.getName() != null) {
       var user = userRepository.findByEmail(authentication.getName());
@@ -375,15 +509,20 @@ public class UserServiceImpl implements UserService {
     return 0;
   }
 
-
-  public ResponseEntity<isAdminDto> checkifAdmin(Authentication authentication) {
+  /**
+   * Checks whether the authenticated user has the ADMIN role.
+   *
+   * @param authentication the auth object
+   * @return {@link IsAdminDto} indicating admin status
+   */
+  public ResponseEntity<IsAdminDto> checkifAdmin(Authentication authentication) {
     var getusr = userRepository.findByEmail(authentication.getName());
     if (getusr.isPresent()) {
       if (getusr.get().getRole().equals(UserRoleEnum.ADMIN)) {
-        return new ResponseEntity(new isAdminDto(true), OK);
+        return new ResponseEntity(new IsAdminDto(true), OK);
       }
 
-      return new ResponseEntity<>(new isAdminDto(false), OK);
+      return new ResponseEntity<>(new IsAdminDto(false), OK);
 
     }
     return ResponseEntity.status(BAD_REQUEST).body(null);

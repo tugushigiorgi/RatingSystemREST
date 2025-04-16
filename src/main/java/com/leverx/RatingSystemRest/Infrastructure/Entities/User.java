@@ -1,16 +1,20 @@
 package com.leverx.RatingSystemRest.Infrastructure.Entities;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,14 +49,14 @@ public class User implements UserDetails {
    * Cannot be null.
    */
   @Column(nullable = false)
-  private String first_name;
+  private String firstName;
 
   /**
    * The last name of the user.
    * Cannot be null.
    */
   @Column(nullable = false)
-  private String last_name;
+  private String lastName;
 
   /**
    * The email address of the user.
@@ -73,7 +77,7 @@ public class User implements UserDetails {
    * Cannot be null or updatable.
    */
   @Column(nullable = false, updatable = false)
-  private LocalDateTime created_at;
+  private LocalDateTime createdAt;
 
   /**
    * Indicates whether the user has verified their email.
@@ -140,7 +144,7 @@ public class User implements UserDetails {
    * @return the full name of the user.
    */
   public String fullName() {
-    return first_name + " " + last_name;
+    return firstName + " " + lastName;
   }
 
   /**

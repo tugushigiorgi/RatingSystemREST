@@ -37,5 +37,5 @@ public interface CommentRepository extends JpaRepository<Comment, Integer> {
    * @return a list of unapproved comments.
    */
   @Query("SELECT c FROM Comment c WHERE c.approved = false")
-  List<Comment> AllNotApprovedReviews();
+  List<Comment> allNotApprovedReviews();
 }

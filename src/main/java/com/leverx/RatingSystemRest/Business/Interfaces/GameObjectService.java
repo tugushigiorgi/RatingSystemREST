@@ -1,10 +1,9 @@
 package com.leverx.RatingSystemRest.Business.Interfaces;
 
-import java.util.List;
-
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.UpdateGameObject;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.addGameObjectDto;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 

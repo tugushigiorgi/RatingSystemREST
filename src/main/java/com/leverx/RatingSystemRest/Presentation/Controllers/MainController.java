@@ -1,22 +1,27 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 
-
+import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Business.impl.EmailServiceImp;
 import com.leverx.RatingSystemRest.Business.impl.GameObjectServiceImp;
 import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
-import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @AllArgsConstructor
@@ -50,7 +55,7 @@ public class MainController {
     }
 
     @PostMapping("/addcomment")
-    public ResponseEntity<String> add( @Valid @RequestBody addCommentDto dto ){
+    public ResponseEntity<String> add( @Valid @RequestBody AddCommentDto dto ){
 
         return commentService.add(dto);
     }

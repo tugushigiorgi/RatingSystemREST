@@ -2,7 +2,7 @@ package com.leverx.RatingSystemRest.Business.Interfaces;
 
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
@@ -19,7 +19,7 @@ public interface CommentService {
      * @param dto the data transfer object containing comment data
      * @return response indicating the result
      */
-    ResponseEntity<String> add(addCommentDto dto);
+    ResponseEntity<String> add(AddCommentDto dto);
 
     /**
      * Deletes a comment.
