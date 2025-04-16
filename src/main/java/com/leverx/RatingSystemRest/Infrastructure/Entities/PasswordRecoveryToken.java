@@ -15,7 +15,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
-
 /**
  * Entity representing a password recovery token associated with a user.
  * This token allows temporary access for password reset and has a strict expiration time.

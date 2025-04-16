@@ -3,7 +3,7 @@ package com.leverx.RatingSystemRest.Business.Interfaces;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.isAdminDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.IsAdminDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.*;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -116,5 +116,5 @@ public interface UserService {
    * @param authentication the authentication object from Spring Security
    * @return a response indicating if the user is an admin
    */
-  ResponseEntity<isAdminDto> checkifAdmin(Authentication authentication);
+  ResponseEntity<IsAdminDto> checkifAdmin(Authentication authentication);
 }

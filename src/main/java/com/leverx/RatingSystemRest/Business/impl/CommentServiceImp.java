@@ -1,23 +1,27 @@
 package com.leverx.RatingSystemRest.Business.impl;
 
-import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.*;
-import static java.util.Collections.emptyList;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.ANONYMOUS_ALREADY_SUBMITTED_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_ADDED_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_APPROVED_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_DELETED_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.DELETED_SUCCESSFULLY_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.PERMISSION_DENIED_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.SELLER_NOT_FOUND_MESSAGE;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.UPDATED_SUCCESSFULLY_MESSAGE;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
-import com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages;
 import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Comment;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.CommentRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.addCommentDto;
-
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,92 +31,108 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Service which implement commentService interface.
+ * Implementation of {@link CommentService} for handling comment operations.
  */
 @Service
-@SuppressWarnings("checkstyle:Indentation")
 @AllArgsConstructor
 public class CommentServiceImp implements CommentService {
 
   private final CommentRepository commentRepository;
-
   private final UserRepository userRepository;
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Adds a new comment to a seller if the anonymous user has not already submitted one.
+   *
+   * @param dto the data transfer object containing comment data
+   * @return HTTP response containing success or failure message
    */
-  public ResponseEntity<String> add(addCommentDto dto) {
-
-    var currentSeller = userRepository.findById(dto.sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found"));
-    var hasMatchingAnonymousId = currentSeller.getComments().stream().anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
+  @Override
+  public ResponseEntity<String> add(AddCommentDto dto) {
+    var currentSeller = userRepository.findById(dto.sellerId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
+    var hasMatchingAnonymousId = currentSeller.getComments().stream()
+        .anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
 
     if (hasMatchingAnonymousId) {
-
       return new ResponseEntity<>(ANONYMOUS_ALREADY_SUBMITTED_MESSAGE, BAD_REQUEST);
-
     }
-    var newComment = Comment.builder().approved(false).created_at(LocalDateTime.now()).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
+
+    var newComment = Comment.builder()
+        .approved(false)
+        .createdAt(LocalDateTime.now())
+        .user(currentSeller)
+        .rating(dto.getReview())
+        .message(dto.getComment())
+        .anonymousId(dto.anonymousId)
+        .build();
+
     currentSeller.getComments().add(newComment);
     commentRepository.save(newComment);
     userRepository.save(currentSeller);
+
     return new ResponseEntity<>(COMMENT_ADDED_MESSAGE, OK);
-
-
   }
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Deletes a comment by its ID if the anonymous ID matches the comment's author.
+   *
+   * @param anonymousId the ID of the anonymous user
+   * @param commentId   the ID of the comment to delete
+   * @return HTTP response indicating the result of the operation
    */
+  @Override
   @Transactional
   public ResponseEntity<String> delete(int anonymousId, int commentId) {
-
-    var currentComment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
-
+    var currentComment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
 
     if (currentComment.getAnonymousId() != anonymousId) {
       return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
-
     }
+
     commentRepository.deleteById(commentId);
     return new ResponseEntity<>(DELETED_SUCCESSFULLY_MESSAGE, OK);
-
-
   }
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Updates a comment's content or rating.
+   *
+   * @param dto the update request DTO
+   * @return HTTP response indicating the result of the update
    */
+  @Override
   public ResponseEntity<String> update(CommentUpdateDto dto) {
-
-    var currentComment = commentRepository.findById(dto.getCommentId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
+    var currentComment = commentRepository.findById(dto.getCommentId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
 
     if (currentComment.getAnonymousId() != dto.getAnonymousId()) {
       return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
-
     }
 
     if (dto.getComment() != null && !dto.getComment().equals(currentComment.getMessage())) {
-
       currentComment.setMessage(dto.getComment());
     }
+
     if (dto.getReview() != currentComment.getRating()) {
       currentComment.setRating(dto.getReview());
     }
 
     commentRepository.save(currentComment);
-
-
     return new ResponseEntity<>(UPDATED_SUCCESSFULLY_MESSAGE, OK);
   }
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Retrieves all approved reviews for a given seller.
+   *
+   * @param sellerId the ID of the seller
+   * @return a list of approved review DTOs or 204 if none are found
    */
+  @Override
   public ResponseEntity<List<UserReviewsDto>> getApprovedReviewsBySellerId(int sellerId) {
-    var seller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
+    var seller = userRepository.findById(sellerId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
 
     var reviews = commentRepository.sellersAllApprovedReviews(sellerId);
-
     if (reviews.isEmpty()) {
       return ResponseEntity.noContent().build();
     }
@@ -122,68 +142,89 @@ public class CommentServiceImp implements CommentService {
   }
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Retrieves all unapproved reviews for a given seller.
+   *
+   * @param sellerId the ID of the seller
+   * @return a list of unapproved review DTOs
+   * @throws Exception if the seller is not found
    */
+  @Override
   public List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception {
-    var seller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
+    var seller = userRepository.findById(sellerId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
 
-    var Reviews = commentRepository.sellersNotApprovedReviews(sellerId);
-    return Reviews.stream().map(UserReviewsDto::toDto).toList();
-
-
+    var reviews = commentRepository.sellersNotApprovedReviews(sellerId);
+    return reviews.stream().map(UserReviewsDto::toDto).toList();
   }
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Retrieves all unapproved reviews in the system.
+   *
+   * @return a list of unapproved review DTOs
    */
+  @Override
   public List<UserReviewsDto> getAllNotApprovedReviews() {
     var notApprovedReviews = commentRepository.allNotApprovedReviews();
-
-
     if (CollectionUtils.isEmpty(notApprovedReviews)) {
-      return emptyList();
+      return List.of();
     }
     return notApprovedReviews.stream().map(UserReviewsDto::toDto).collect(Collectors.toList());
   }
 
   /**
-   * Constants for GameObject-related messages used in the services.
+   * Approves a user review and recalculates the seller’s average rating.
+   *
+   * @param commentId the ID of the comment to approve
+   * @return HTTP response indicating the result of the operation
    */
+  @Override
   public ResponseEntity<String> approveUserReview(int commentId) {
+    var comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
 
+    var seller = userRepository.findById(comment.getUser().getId())
+        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND_MESSAGE));
 
-    var getcomment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
+    var approvedComments = seller.getComments().stream()
+        .filter(Comment::isApproved)
+        .toList();
 
-    var currentSeller = userRepository.findById(getcomment.getUser().getId()).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND_MESSAGE));
+    int count = approvedComments.size();
+    int sum = (int) sumCurrentRating(approvedComments);
 
+    double newAverage = (sum + comment.getRating()) / (double) (count + 1);
+    seller.setTotalRating(newAverage);
 
-    var userTotalApprovedComments = currentSeller.getComments().stream().filter(Comment::isApproved).toList();
+    comment.setApproved(true);
 
-    var CurrentRatingCount = userTotalApprovedComments.size();
-    var CurrentRatingSum = sumCurrentRating(userTotalApprovedComments);
+    userRepository.save(seller);
+    commentRepository.save(comment);
 
-    var NewRating = (CurrentRatingSum + getcomment.getRating()) / (CurrentRatingCount + 1);
-    currentSeller.setTotalRating(NewRating);
-
-    userRepository.save(currentSeller);
-
-    getcomment.setApproved(true);
-    commentRepository.save(getcomment);
     return new ResponseEntity<>(COMMENT_APPROVED_MESSAGE, OK);
-
-
   }
 
+  /**
+   * Declines and deletes a comment.
+   *
+   * @param commentId the ID of the comment to decline
+   * @return HTTP response indicating successful deletion
+   */
+  @Override
   @Transactional
   public ResponseEntity<String> declineUserReview(int commentId) {
-    var getcomment = commentRepository.findById(commentId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE));
+    var comment = commentRepository.findById(commentId)
+        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, COMMENT_NOT_FOUND_MESSAGE));
     commentRepository.deleteById(commentId);
     return new ResponseEntity<>(COMMENT_DELETED_MESSAGE, OK);
   }
 
-  public static double sumCurrentRating(List<Comment> comment) {
-    return comment.stream().mapToInt(Comment::getRating).sum();
+  /**
+   * Helper method to calculate the sum of all ratings from a list of comments.
+   *
+   * @param comments the list of comments
+   * @return the total sum of ratings
+   */
+  public static double sumCurrentRating(List<Comment> comments) {
+    return comments.stream().mapToInt(Comment::getRating).sum();
   }
-
-
 }

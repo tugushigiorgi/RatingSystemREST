@@ -23,16 +23,16 @@ public interface PasswordRecTokenRepository extends JpaRepository<PasswordRecove
   @Query("SELECT c FROM PasswordRecoveryToken c WHERE c.token = :token")
   Optional<PasswordRecoveryToken> findByToken(String token);
 
-//  /**
-//   * Deletes a PasswordRecoveryToken by its ID.
-//   * This operation is transactional and modifies the database.
-//   *
-//   * @param id the ID of the PasswordRecoveryToken to be deleted.
-//   */
-//  @Modifying
-//  @Transactional
-//  @Query(value = "DELETE FROM PasswordRecoveryToken c WHERE c.id = :id")
-//  void deleteByID(int id);
+  /**
+   * Deletes a PasswordRecoveryToken by its ID.
+   * This operation is transactional and modifies the database.
+   *
+   * @param id the ID of the PasswordRecoveryToken to be deleted.
+   */
+  @Modifying
+  @Transactional
+  @Query(value = "DELETE FROM PasswordRecoveryToken c WHERE c.id = :id")
+  void deletebyId(int id);
 
-  void deleteById(int id);
+
 }

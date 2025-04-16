@@ -1,10 +1,8 @@
 package com.leverx.RatingSystemRest.Infrastructure.Repositories;
 
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
-
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -38,7 +36,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
    * @param username the username (or part of it) used to filter sellers.
    * @return a list of approved sellers whose first name matches the search criteria.
    */
-  @Query("SELECT u FROM User u WHERE u.role = 'SELLER' and u.isApprovedByAdmin = true and u.first_name like %:username%")
+  @Query("SELECT u FROM User u WHERE u.role = 'SELLER' and u.isApprovedByAdmin = true and u.firstName like %:username%")
   List<User> getRegisteredSellerByUsername(String username);
 
   /**
