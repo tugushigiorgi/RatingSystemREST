@@ -21,55 +21,54 @@ import java.util.Map;
 @Builder
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.put(error.getField(), error.getDefaultMessage());
-        }
-        return ResponseEntity.badRequest().body(errors);
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    Map<String, String> errors = new HashMap<>();
+    for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+      errors.put(error.getField(), error.getDefaultMessage());
     }
+    return ResponseEntity.badRequest().body(errors);
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleGeneralException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong: " + ex.getMessage());
-    }
-
-
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<String> handleResponseStatusException(ResponseStatusException ex) {
-
-        return ResponseEntity.status(ex.getStatusCode()).body(ex.getReason());
-    }
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<String> handleGeneralException(Exception ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong: " + ex.getMessage());
+  }
 
 
-    @ExceptionHandler(MessagingException.class)
-    public ResponseEntity<String> handleMessagingException(MessagingException ex) {
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<String> handleResponseStatusException(ResponseStatusException ex) {
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("An error occurred while sending the email: " + ex.getMessage());
-    }
-
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<String> handleFileException(IOException ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("An error occurred while saving file: " + ex.getMessage());
-    }
+    return ResponseEntity.status(ex.getStatusCode()).body(ex.getReason());
+  }
 
 
+  @ExceptionHandler(MessagingException.class)
+  public ResponseEntity<String> handleMessagingException(MessagingException ex) {
 
-    @ExceptionHandler(FileNotFoundException.class)
-    public ResponseEntity<String> handleFileNotFoundExceptionException(FileNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body( ex.getMessage());
-    }
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body("An error occurred while sending the email: " + ex.getMessage());
+  }
+
+  @ExceptionHandler(IOException.class)
+  public ResponseEntity<String> handleFileException(IOException ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body("An error occurred while saving file: " + ex.getMessage());
+  }
 
 
-    @ExceptionHandler(SQLException.class)
-    public ResponseEntity<String>  SqlExceptionHelperExceptionException(SQLException ex ) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body( ex.getMessage());
-    }
+  @ExceptionHandler(FileNotFoundException.class)
+  public ResponseEntity<String> handleFileNotFoundExceptionException(FileNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(ex.getMessage());
+  }
+
+
+  @ExceptionHandler(SQLException.class)
+  public ResponseEntity<String> SqlExceptionHelperExceptionException(SQLException ex) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(ex.getMessage());
+  }
 
 
 }

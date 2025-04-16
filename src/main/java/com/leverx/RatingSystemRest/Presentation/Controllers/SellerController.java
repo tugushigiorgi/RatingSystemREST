@@ -3,7 +3,7 @@ package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 import com.leverx.RatingSystemRest.Business.impl.GameObjectServiceImp;
 import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
-import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
+import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
@@ -26,7 +26,7 @@ public class SellerController {
     private final  GameObjectServiceImp gameObjectService;
     private final UserRepository userRepository;
 
-    private final commentService commentService;
+    private final CommentService commentService;
 
 
     @GetMapping("/games")

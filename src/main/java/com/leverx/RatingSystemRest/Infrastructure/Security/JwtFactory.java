@@ -20,7 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * JwtFactory for dealing with Json web token.
+ */
+
 @Service
+@SuppressWarnings("checkstyle:Indentation")
 public class JwtFactory {
 
     @Value("${jwt.signinkey}")
