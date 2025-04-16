@@ -2,7 +2,7 @@ package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 
 import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
-import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
+import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
@@ -23,7 +23,7 @@ public class AdminController {
 
     private final UserServiceImpl userServiceImpl;
 
-    private final  commentService commentService;
+    private final CommentService commentService;
 
     //TODO  uppercase -> lower case methods name
     //GOOGle CHECKSTYLE

@@ -5,7 +5,7 @@ package com.leverx.RatingSystemRest.Presentation.Controllers;
 import com.leverx.RatingSystemRest.Business.impl.EmailServiceImp;
 import com.leverx.RatingSystemRest.Business.impl.GameObjectServiceImp;
 import com.leverx.RatingSystemRest.Business.impl.UserServiceImpl;
-import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
+import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
@@ -25,7 +25,7 @@ public class MainController {
     private UserServiceImpl userServiceImpl;
     private EmailServiceImp emailService;
     private GameObjectServiceImp gameObjectService;
-    private commentService commentService;
+    private CommentService commentService;
     @GetMapping("/topselers")
     public ResponseEntity<List<UserInfoDto>> topRatedSelelrs() {
 

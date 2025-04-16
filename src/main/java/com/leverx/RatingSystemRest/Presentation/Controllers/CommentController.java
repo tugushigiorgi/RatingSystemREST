@@ -1,15 +1,15 @@
 package com.leverx.RatingSystemRest.Presentation.Controllers;
 
 
-import com.leverx.RatingSystemRest.Business.Interfaces.commentService;
+import com.leverx.RatingSystemRest.Business.Interfaces.CommentService;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/comment")
 public class CommentController {
-        private final commentService commentService;
-        public CommentController(commentService commentService) {
+        private final CommentService commentService;
+        public CommentController(CommentService commentService) {
             this.commentService = commentService;
         }
 
