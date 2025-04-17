@@ -19,9 +19,9 @@ public interface UserService {
   /**
    * Retrieves a list of seller registration requests awaiting approval.
    *
-   * @return a response containing the list of pending seller requests
+   * @return the list of pending seller requests
    */
-  ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests();
+  List<AdminNotApprovedUserDto> getSellersRegistrationRequests();
 
   /**
    * Accepts a pending seller registration request.
@@ -29,14 +29,14 @@ public interface UserService {
    * @param sellerId the ID of the seller to approve
    * @return a response containing the result of the operation
    */
-  ResponseEntity<String> acceptSellerRegistrationRequest(int sellerId);
+  boolean acceptSellerRegistrationRequest(int sellerId);
 
   /**
    * Retrieves a list of all detailed registered users.
    *
-   * @return a response containing the list of detailed users
+   * @return list of detailed users
    */
-  ResponseEntity<List<DetailedUserDto>> detailedRegisteredUsers();
+  List<DetailedUserDto> detailedRegisteredUsers();
 
   /**
    * Retrieves detailed user information filtered by username.
@@ -44,15 +44,14 @@ public interface UserService {
    * @param username the username to filter users by
    * @return a response containing the list of matched users
    */
-  ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUsersByUsername(String username);
+  List<DetailedUserDto> getDetailedRegisteredUsersByUsername(String username);
 
   /**
    * Deletes a user by their ID.
    *
    * @param userId the ID of the user to delete
-   * @return a response containing the result of the operation
    */
-  ResponseEntity<String> deleteById(int userId);
+  void deleteById(int userId);
 
   /**
    * Retrieves user info by user ID.

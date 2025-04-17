@@ -1,8 +1,8 @@
 package com.leverx.RatingSystemRest.Business.Interfaces;
 
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
@@ -66,15 +66,14 @@ public interface CommentService {
      * Approves a user review.
      *
      * @param commentId the ID of the comment
-     * @return response indicating the result
+     * @return void if success or throws exception.
      */
-    ResponseEntity<String> approveUserReview(int commentId);
+    void approveUserReview(int commentId);
 
     /**
      * Declines a user review.
      *
      * @param commentId the ID of the comment
-     * @return response indicating the result
      */
-    ResponseEntity<String> declineUserReview(int commentId);
+    void declineUserReview(int commentId);
 }

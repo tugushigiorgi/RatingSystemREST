@@ -9,6 +9,7 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMes
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.PERMISSION_DENIED_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.SELLER_NOT_FOUND_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.UPDATED_SUCCESSFULLY_MESSAGE;
+import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -20,6 +21,7 @@ import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -166,24 +168,26 @@ public class CommentServiceImp implements CommentService {
   public List<UserReviewsDto> getAllNotApprovedReviews() {
     var notApprovedReviews = commentRepository.allNotApprovedReviews();
     if (CollectionUtils.isEmpty(notApprovedReviews)) {
-      return List.of();
+      return emptyList();
     }
-    return notApprovedReviews.stream().map(UserReviewsDto::toDto).collect(Collectors.toList());
+    return notApprovedReviews.stream()
+        .map(UserReviewsDto::toDto)
+        .collect(Collectors.toList());
   }
 
   /**
    * Approves a user review and recalculates the seller’s average rating.
    *
    * @param commentId the ID of the comment to approve
-   * @return HTTP response indicating the result of the operation
+   *                  returns void if successfully approved or throws exception.
    */
   @Override
-  public ResponseEntity<String> approveUserReview(int commentId) {
+  public void approveUserReview(int commentId) {
     var comment = commentRepository.findById(commentId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
 
     var seller = userRepository.findById(comment.getUser().getId())
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND_MESSAGE));
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, SELLER_NOT_FOUND_MESSAGE));
 
     var approvedComments = seller.getComments().stream()
         .filter(Comment::isApproved)
@@ -199,23 +203,19 @@ public class CommentServiceImp implements CommentService {
 
     userRepository.save(seller);
     commentRepository.save(comment);
-
-    return new ResponseEntity<>(COMMENT_APPROVED_MESSAGE, OK);
   }
 
   /**
    * Declines and deletes a comment.
    *
    * @param commentId the ID of the comment to decline
-   * @return HTTP response indicating successful deletion
    */
   @Override
   @Transactional
-  public ResponseEntity<String> declineUserReview(int commentId) {
+  public void  declineUserReview(int commentId) {
     var comment = commentRepository.findById(commentId)
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, COMMENT_NOT_FOUND_MESSAGE));
     commentRepository.deleteById(commentId);
-    return new ResponseEntity<>(COMMENT_DELETED_MESSAGE, OK);
   }
 
   /**
