@@ -10,6 +10,12 @@ import lombok.Setter;
 import lombok.ToString;
 import org.springframework.http.HttpStatus;
 
+/**
+ * This class encapsulates the response details for various service operations,
+ * providing information on whether the operation was successful, the status message,
+ * the HTTP status, and an optional JWT token.
+ */
+
 @Getter
 @Setter
 @AllArgsConstructor
