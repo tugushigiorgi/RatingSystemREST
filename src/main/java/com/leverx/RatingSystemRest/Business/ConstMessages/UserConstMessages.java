@@ -50,4 +50,7 @@ public final class UserConstMessages {
 
   public static final String PASSWORD_IS_SAME = "Password is same, submit different one";
 
+  public static final String PASSWORD_RECOVERY_MAIL_SENT = "Password recovery email sent successfully";
+
+
 }

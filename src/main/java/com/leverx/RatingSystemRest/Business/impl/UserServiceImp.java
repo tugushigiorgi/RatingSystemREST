@@ -12,17 +12,17 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_CHANGED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_IS_SAME;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_RECOVERY_MAIL_SENT;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_UPDATED_SUCCESSFULLY;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_APPROVED_SELLER_REGISTRATION;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_ENABLED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_NOT_FOUND;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_DELETED_SUCCESSFULLY;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND_WITH_EMAIL;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_REGISTERED_SUCCESSFULLY;
+import static com.leverx.RatingSystemRest.Presentation.ConstMessages.AuthConstMessages.AUTHENTICATED_SUCCESSFULLY;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -45,9 +45,9 @@ import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoReposito
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Security.JwtFactory;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.IsAdminDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.JwtDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
@@ -55,16 +55,17 @@ import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.LoginDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.RegisterUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
+import com.leverx.RatingSystemRest.Presentation.ServiceResponse;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -79,7 +80,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -88,7 +88,7 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImp implements UserService {
   @Value("${file.upload-dir}")
   private String uploadDir;
   private final UserRepository userRepository;
@@ -98,7 +98,7 @@ public class UserServiceImpl implements UserService {
   private final TokenRepository tokenRepository;
   private final PasswordRecTokenRepository pwdRecoveryTokenRepository;
   private final JwtFactory jwtFactory;
-
+  private final AuthenticationManager authenticationManager;
 
   /**
    * Retrieves all pending seller registration requests.
@@ -310,26 +310,33 @@ public class UserServiceImpl implements UserService {
    *
    * @param dto   user registration data
    * @param photo the profile picture
-   * @return success message or error
+   * @return ServiceResponse
    */
-  public ResponseEntity<String> registerUser(RegisterUserDto dto, MultipartFile photo) {
-
-    var checkifExists = userRepository.findByEmail(dto.email);
-    if (checkifExists.isPresent()) {
-      return new ResponseEntity<>(EMAIL_ALREADY_EXISTS, BAD_REQUEST);
+  public ServiceResponse registerUser(RegisterUserDto dto, MultipartFile photo) {
+    var checkIfExists = userRepository.findByEmail(dto.email);
+    if (checkIfExists.isPresent()) {
+      return new ServiceResponse(false, EMAIL_ALREADY_EXISTS, BAD_REQUEST, null);
     }
-    var createUser = User.builder().createdAt(LocalDateTime.now()).firstName(dto.name).lastName(dto.surname).email(dto.email).password(passwordEncoder.encode(dto.password)).isApprovedByAdmin(false).role(UserRoleEnum.SELLER).hasVerifiedEmail(false).build();
+    var createUser = User.builder()
+        .createdAt(LocalDateTime.now())
+        .firstName(dto.name)
+        .lastName(dto.surname)
+        .email(dto.email)
+        .password(passwordEncoder.encode(dto.password))
+        .isApprovedByAdmin(false)
+        .role(UserRoleEnum.SELLER)
+        .hasVerifiedEmail(false)
+        .build();
 
     userRepository.save(createUser);
-    var savephoto = saveUserPictureLocal(createUser.getId(), photo);
-    if (savephoto != null) {
-      savephoto.setUser(createUser);
-      userPhotoRepository.save(savephoto);
-    } else {
-      return new ResponseEntity<>(PICTURE_CANNOT_BE_SAVED, INTERNAL_SERVER_ERROR);
+    var savePhoto = saveUserPictureLocal(createUser.getId(), photo);
+    if (savePhoto == null) {
+      return new ServiceResponse(false, PICTURE_CANNOT_BE_SAVED, INTERNAL_SERVER_ERROR, null);
     }
+    savePhoto.setUser(createUser);
+    userPhotoRepository.save(savePhoto);
     sendRegistrationEmail(createUser);
-    return new ResponseEntity<>(USER_REGISTERED_SUCCESSFULLY, OK);
+    return new ServiceResponse(true, USER_REGISTERED_SUCCESSFULLY, OK, null);
   }
 
   /**
@@ -352,31 +359,34 @@ public class UserServiceImpl implements UserService {
    * @param token the activation token
    * @return success or error response depending on validity and expiration
    */
+
   @Transactional
-  public ResponseEntity<String> activateAccount(String token) {
+  public ServiceResponse activateAccount(String token) {
 
     var savedToken = tokenRepository.findByToken(token);
+
     if (savedToken.isEmpty()) {
-      return new ResponseEntity<>(TOKEN_NOT_FOUND, NOT_FOUND);
+      return new ServiceResponse(false, UserConstMessages.TOKEN_NOT_FOUND, HttpStatus.NOT_FOUND, null);
     }
-    var user = userRepository.findById(savedToken.get().getUser().getId()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+    var user = userRepository.findById(savedToken.get().getUser().getId())
+        .orElseThrow(() -> new UsernameNotFoundException(USER_NOT_FOUND));
 
     if (user.isHasVerifiedEmail()) {
-      return new ResponseEntity<>(ACCOUNT_IS_ALREADY_VERIFIED, BAD_REQUEST);
+      return new ServiceResponse(false, ACCOUNT_IS_ALREADY_VERIFIED, HttpStatus.BAD_REQUEST, null);
     }
 
     if (LocalDateTime.now().isAfter(savedToken.get().getExpiresAt())) {
-
       tokenRepository.deleteById(savedToken.get().getId());
       sendRegistrationEmail(user);
-
-      return new ResponseEntity<>(TOKEN_EXPIRED_NEW_TOKEN_SEND, BAD_REQUEST);
+      return new ServiceResponse(false, TOKEN_EXPIRED_NEW_TOKEN_SEND, HttpStatus.BAD_REQUEST, null);
     }
+
     user.setHasVerifiedEmail(true);
     userRepository.save(user);
     tokenRepository.deleteTokenById(savedToken.get().getId());
 
-    return new ResponseEntity<>(SUCCESSFULLY_ENABLED, OK);
+    return new ServiceResponse(true, SUCCESSFULLY_ENABLED, HttpStatus.OK, null);
   }
 
   /**
@@ -417,31 +427,34 @@ public class UserServiceImpl implements UserService {
    * Sends a password recovery code to the user's email.
    *
    * @param email the user's email address
-   * @return success or error message
+   * @return ServiceResponse
    */
-  public ResponseEntity<String> sendRecoverCode(String email) {
-    var getuser = userRepository.findByEmail(email);
-    if (getuser.isEmpty()) {
-      return new ResponseEntity<>(USER_NOT_FOUND_WITH_EMAIL, NOT_FOUND);
+
+  @Transactional
+  public ServiceResponse sendRecoverCode(String email) {
+    var userOptional = userRepository.findByEmail(email);
+    if (userOptional.isEmpty()) {
+      return new ServiceResponse(false, USER_NOT_FOUND_WITH_EMAIL, NOT_FOUND, null);
     }
 
-    if (getuser.get().getPasswordRecoveryToken() != null) {
+    var user = userOptional.get();
 
-      return new ResponseEntity<>(PASSWORD_RECOVERY_TOKEN_ALREADY_SENT, BAD_REQUEST);
+    if (user.getPasswordRecoveryToken() != null) {
+      return new ServiceResponse(false, PASSWORD_RECOVERY_TOKEN_ALREADY_SENT, HttpStatus.BAD_REQUEST, null);
     }
 
-    var currentuser = getuser.get();
-    var generatedtoken = UUID.randomUUID().toString();
-    var token = PasswordRecoveryToken.
-        builder()
-        .token(generatedtoken)
+    var generatedToken = UUID.randomUUID().toString();
+    var recoveryToken = PasswordRecoveryToken.builder()
+        .token(generatedToken)
         .createdAt(LocalDateTime.now())
         .expiresAt(LocalDateTime.now().plusHours(24))
-        .user(currentuser)
+        .user(user)
         .build();
-    pwdRecoveryTokenRepository.save(token);
-    emailService.sendRecoverLink(currentuser.getEmail(), generatedtoken);
-    return new ResponseEntity<>(EMAIL_SENT_SUCCESSFULLY, OK);
+
+    pwdRecoveryTokenRepository.save(recoveryToken);
+    emailService.sendRecoverLink(user.getEmail(), generatedToken);
+
+    return new ServiceResponse(true, PASSWORD_RECOVERY_MAIL_SENT, OK, null);
   }
 
   /**
@@ -450,50 +463,59 @@ public class UserServiceImpl implements UserService {
    * @param dto the DTO containing token and new passwords
    * @return success or error response
    */
-  public ResponseEntity<String> updatePassword(RecoverPasswordDto dto) {
+  @Transactional
+  public ServiceResponse updatePassword(RecoverPasswordDto dto) {
+    var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken())
+        .orElseThrow(() -> new IllegalArgumentException(UserConstMessages.INVALID_TOKEN));
 
-    var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken()).orElseThrow(() -> new IllegalArgumentException(UserConstMessages.INVALID_TOKEN));
     if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
       pwdRecoveryTokenRepository.deleteById(savedToken.getId());
-      return ResponseEntity.status(BAD_REQUEST).body(TOKEN_EXPIRED);
+      return new ServiceResponse(false, TOKEN_EXPIRED, BAD_REQUEST, null);
     }
-    var user = userRepository.findById(savedToken.getUser().getId()).orElseThrow(() -> new UsernameNotFoundException(UserConstMessages.USER_NOT_FOUND));
+
+    var user = userRepository.findById(savedToken.getUser().getId())
+        .orElseThrow(() -> new UsernameNotFoundException(UserConstMessages.USER_NOT_FOUND));
 
     if (!dto.getNewpassword().equals(dto.getPassword())) {
-      return ResponseEntity.status(BAD_REQUEST).body(UserConstMessages.PASSWORD_DOES_NOT_MATCH);
+      return new ServiceResponse(false, UserConstMessages.PASSWORD_DOES_NOT_MATCH, BAD_REQUEST, null);
     }
+
     user.setPassword(passwordEncoder.encode(dto.getPassword()));
     userRepository.save(user);
-    pwdRecoveryTokenRepository.deletebyId(savedToken.getId());
+    pwdRecoveryTokenRepository.deleteById(savedToken.getId());
 
-    return ResponseEntity.ok(PASSWORD_UPDATED_SUCCESSFULLY);
+    return new ServiceResponse(true, UserConstMessages.PASSWORD_UPDATED_SUCCESSFULLY, OK, null);
   }
 
   /**
    * Authenticates a user and returns a JWT if successful.
    *
-   * @param authenticationManager the auth manager
-   * @param logindto              login credentials
-   * @return JWT token with role or UNAUTHORIZED
+   * @param loginDto login credentials
+   * @return ServiceResponse with JWTDto or not
    */
-  public ResponseEntity<JwtDto> login(AuthenticationManager authenticationManager, LoginDto logindto) {
+  public ServiceResponse login(LoginDto loginDto) {
 
     try {
-      var getuser = userRepository.findByEmail(logindto.getEmail());
-      if (getuser.isPresent()) {
-        if (!getuser.get().isApprovedByAdmin) {
-          return ResponseEntity.status(BAD_REQUEST).body(null);
-        }
+      var userOptional = userRepository.findByEmail(loginDto.getEmail());
+      if (userOptional.isEmpty()) {
+        return new ServiceResponse(false, "User not found", HttpStatus.BAD_REQUEST, null);
       }
-      authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(logindto.getEmail(), logindto.getPassword()));
-      var token = jwtFactory.generateToken(getuser.get());
-      var dto = new JwtDto(token, getuser.get().getRole().toString());
-      return ResponseEntity.ok(dto);
+      var user = userOptional.get();
+      if (!user.isApprovedByAdmin()) {
+        return new ServiceResponse(false, "User not approved by admin", HttpStatus.BAD_REQUEST, null);
+      }
+      authenticationManager.authenticate(
+          new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+      );
+
+      var token = jwtFactory.generateToken(user);
+      var jwtDto = new JwtDto(token, user.getRole().toString());
+      return new ServiceResponse(true, AUTHENTICATED_SUCCESSFULLY, OK, jwtDto);
 
     } catch (Exception e) {
-      System.out.println(AUTHENTICATION_FAILED + " " + e.getMessage());
-      return ResponseEntity.status(UNAUTHORIZED).body(null);
+      return new ServiceResponse(false, AUTHENTICATION_FAILED, UNAUTHORIZED, null);
     }
+
 
   }
 

@@ -5,6 +5,7 @@ import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.IsAdminDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.*;
+import com.leverx.RatingSystemRest.Presentation.ServiceResponse;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -90,9 +91,9 @@ public interface UserService {
    *
    * @param dto   the user registration data
    * @param photo the profile photo to be uploaded
-   * @return a response indicating the result of registration
+   * @return a ServiceResponse
    */
-  ResponseEntity<String> registerUser(RegisterUserDto dto, MultipartFile photo);
+  ServiceResponse registerUser(RegisterUserDto dto, MultipartFile photo);
 
   /**
    * Sends a registration confirmation email.
