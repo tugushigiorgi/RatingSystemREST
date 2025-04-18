@@ -20,7 +20,6 @@ import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
 
 import com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages;
 import com.leverx.RatingSystemRest.Business.Interfaces.UserService;
@@ -59,7 +58,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -537,6 +535,8 @@ public class UserServiceImpl implements UserService {
     }
     throw new ResponseStatusException(BAD_REQUEST);
   }
+
+
 
   /**
    * Checks whether the authenticated user has the ADMIN role.

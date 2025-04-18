@@ -14,7 +14,6 @@ import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -124,13 +123,6 @@ public interface UserService {
    */
   int retriaveLogedUserId(Authentication authentication);
 
-  /**
-   * Checks whether the authenticated user has admin privileges.
-   *
-   * @param authentication the authentication object from Spring Security
-   * @return a response indicating if the user is an admin
-   */
-  ResponseEntity<IsAdminDto> checkifAdmin(Authentication authentication);
 
   /**
    * Send Password recovery code Email.
@@ -158,7 +150,10 @@ public interface UserService {
   void logout(HttpServletRequest request);
 
   /**
-   * check if admin.
+   * Checks whether the authenticated user has admin privileges.
+   *
+   * @param authentication the authentication object from Spring Security
+   * @return a response indicating if the user is an admin
    */
   IsAdminDto checkIfAdmin(Authentication authentication);
 
