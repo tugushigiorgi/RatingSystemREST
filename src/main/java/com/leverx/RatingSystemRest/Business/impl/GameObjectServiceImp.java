@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +43,7 @@ import org.springframework.web.server.ResponseStatusException;
  * deleting, and retrieving game listings associated with a seller.
  * </p>
  */
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class GameObjectServiceImp implements GameObjectService {
@@ -63,11 +65,17 @@ public class GameObjectServiceImp implements GameObjectService {
    */
   @Override
   public void add(addGameObjectDto dto, MultipartFile photo, int userId) {
+    log.debug("Attempting to add new game object for userId: {}", userId);
+
     var currentUser = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("User with id {} not found", userId);
+          return new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND);
+        });
 
     var savedPicture = saveNewPictureOnLocalFolder(userId, photo);
     if (savedPicture == null) {
+      log.error("Failed to save picture for game object by userId: {}", userId);
       throw new ResponseStatusException(INTERNAL_SERVER_ERROR, PICTURE_CANNOT_BE_SAVED);
     }
 
@@ -82,6 +90,7 @@ public class GameObjectServiceImp implements GameObjectService {
 
     savedPicture.setGameObject(gameObject);
     gameObjectRepository.save(gameObject);
+    log.info("Game object added successfully for userId: {}", userId);
   }
 
 
@@ -94,13 +103,22 @@ public class GameObjectServiceImp implements GameObjectService {
   @Override
   @Transactional
   public void remove(int gameObjectId, int userId) {
+    log.debug("Attempting to remove game object with id {} by userId {}", gameObjectId, userId);
+
     var getCurrentUser = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("User with Id {} not found", userId);
+          return new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND);
+        });
 
     var currentObject = gameObjectRepository.findById(gameObjectId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("Game object with id {} not found", gameObjectId);
+          return new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND);
+        });
 
     if (!Objects.equals(currentObject.getUser().getId(), getCurrentUser.getId())) {
+      log.warn("User with id {} is not authorized to delete game object with id {}", userId, gameObjectId);
       throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
@@ -109,8 +127,10 @@ public class GameObjectServiceImp implements GameObjectService {
 
       var path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
       Files.deleteIfExists(path);
+      log.info("Game object with id {} removed successfully by userId {}", gameObjectId, userId);
 
     } catch (IOException e) {
+      log.error("Error while deleting the file for game object with id {} by userId {}", gameObjectId, userId, e);
       throw new ResponseStatusException(INTERNAL_SERVER_ERROR, SOMETHING_WENT_WRONG);
     }
   }
@@ -126,13 +146,22 @@ public class GameObjectServiceImp implements GameObjectService {
   @Override
   @Transactional
   public void update(UpdateGameObject dto, MultipartFile photo, int userId) {
+    log.debug("Attempting to update game object with id {} by userId {}", dto.getId(), userId);
+
     var currentUser = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("User with  id {} not found", userId);
+          return new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND);
+        });
 
     var currentObject = gameObjectRepository.findById(dto.getId())
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("Game object with Id {} not found", dto.getId());
+          return new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND);
+        });
 
     if (!Objects.equals(currentObject.getUser().getId(), currentUser.getId())) {
+      log.warn("User with id {} is not authorized to update game object with id {}", userId, dto.getId());
       throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
@@ -155,6 +184,7 @@ public class GameObjectServiceImp implements GameObjectService {
       var updatedPicture = updatePictureOnLocalFolder(oldPicture.getUrl(), userId, photo);
 
       if (updatedPicture == null) {
+        log.error("Failed to update picture for game object with id {}", dto.getId());
         throw new ResponseStatusException(INTERNAL_SERVER_ERROR, PICTURE_CANNOT_BE_SAVED);
       }
 
@@ -165,12 +195,13 @@ public class GameObjectServiceImp implements GameObjectService {
       gameObjectPictureRepository.delete(oldPicture);
       gameObjectRepository.save(currentObject);
       gameObjectPictureRepository.save(updatedPicture);
+      log.info("Game object with id {} updated successfully by userId {}", dto.getId(), userId);
       return;
     }
 
-
     currentObject.setUpdatedAt(LocalDateTime.now());
     gameObjectRepository.save(currentObject);
+    log.info("Game object with id {} updated successfully by userId {}", dto.getId(), userId);
   }
 
 
@@ -182,15 +213,22 @@ public class GameObjectServiceImp implements GameObjectService {
    */
   @Override
   public List<GameObjectDto> getGameObjectsBySellerId(int sellerId) {
+    log.info("Attempting to fetch game objects for seller with ID: {}", sellerId);
+
     var user = userRepository.findById(sellerId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("Seller with ID {} not found", sellerId);
+          return new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND);
+        });
 
     var gameEntities = gameObjectRepository.getGameObjectsBySellerId(sellerId);
 
     if (CollectionUtils.isEmpty(gameEntities)) {
+      log.warn("No game objects found for seller with ID: {}", sellerId);
       return emptyList();
     }
 
+    log.info("Successfully retrieved {} game objects for seller with ID: {}", gameEntities.size(), sellerId);
     return gameEntities.stream()
         .map(GameObjectDto::toDto)
         .toList();
@@ -206,18 +244,24 @@ public class GameObjectServiceImp implements GameObjectService {
    */
   @Override
   public List<GameObjectDto> searchGameObjects(int sellerRating, String title) {
+    log.info("Searching game objects with seller rating: {} and title: {}", sellerRating, title);
+
     List<GameObject> data;
 
     if (title == null || title.isBlank()) {
       data = gameObjectRepository.filterBySellerRating(sellerRating);
+      log.info("Filtering by seller rating: {}", sellerRating);
     } else {
       data = gameObjectRepository.filterByTitleAndRating(title, sellerRating);
+      log.info("Filtering by title: {} and seller rating: {}", title, sellerRating);
     }
 
     if (CollectionUtils.isEmpty(data)) {
+      log.warn("No game objects found with the given filters.");
       return emptyList();
     }
 
+    log.info("Found {} game objects matching the criteria.", data.size());
     return data.stream()
         .map(GameObjectDto::toDto)
         .collect(Collectors.toList());
@@ -232,10 +276,13 @@ public class GameObjectServiceImp implements GameObjectService {
    * @return the saved {@link GameObjectPicture} entity, or null if saving fails
    */
   private GameObjectPicture saveNewPictureOnLocalFolder(int userId, MultipartFile picture) {
+    log.info("Attempting to save new picture for user with ID: {}", userId);
+
     var userFolderPath = uploadDir + File.separator + userId + File.separator + "GAMES";
     var userFolder = new File(userFolderPath);
     if (!userFolder.exists()) {
       userFolder.mkdirs();
+      log.info("Created directory for user pictures at: {}", userFolderPath);
     }
 
     var uuid = UUID.randomUUID();
@@ -246,6 +293,7 @@ public class GameObjectServiceImp implements GameObjectService {
     try {
       var savedFile = new File(filePath);
       picture.transferTo(savedFile);
+      log.info("Successfully saved picture with file name: {}", modifiedFileName);
       return GameObjectPicture.builder()
           .url(publicUrl)
           .size(picture.getSize())
@@ -253,8 +301,10 @@ public class GameObjectServiceImp implements GameObjectService {
           .photoName(modifiedFileName)
           .build();
     } catch (IOException e) {
-      e.printStackTrace();
+      log.error("Failed to save picture for user with ID: {}. Error: {}", userId, e.getMessage());
+
     }
+
     return null;
   }
 
@@ -267,11 +317,16 @@ public class GameObjectServiceImp implements GameObjectService {
    * @return the updated {@link GameObjectPicture} or null if update fails
    */
   private GameObjectPicture updatePictureOnLocalFolder(String currentFileUrl, int userId, MultipartFile file) {
+    log.info("Updating picture for user with ID: {}. Current file URL: {}", userId, currentFileUrl);
+
     try {
       var path = Paths.get(uploadDir + File.separator + currentFileUrl);
       Files.delete(path);
+      log.info("Deleted old picture at: {}", currentFileUrl);
+
       return saveNewPictureOnLocalFolder(userId, file);
     } catch (IOException e) {
+      log.error("Failed to update picture for user with ID: {}. Error: {}", userId, e.getMessage());
       return null;
     }
   }
