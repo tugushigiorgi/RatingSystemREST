@@ -8,12 +8,8 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.ACCOUNT_IS_ALREADY_VERIFIED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.AUTHENTICATION_FAILED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_NOT_VERIFIED;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INCORRECT_PASSWORD;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INVALID_TOKEN;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_CHANGED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_DOES_NOT_MATCH;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_IS_SAME;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND;
@@ -58,7 +54,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -242,32 +237,32 @@ public class UserServiceImpl implements UserService {
   /**
    * Allows a user to change their password.
    *
-   * @param currentuserId the ID of the user requesting the change
+   * @param currentUserId the ID of the user requesting the change
    * @param dto           the DTO containing old and new password
-   * @return success or error message
+   * @return string containint information
    */
-  public ResponseEntity<String> changePassword(int currentuserId, ChangePasswordDto dto) {
+  @Override
+  public String changePassword(int currentUserId, ChangePasswordDto dto) {
+    var user = userRepository.findById(currentUserId)
+        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.USER_NOT_FOUND));
 
-    var getuser = userRepository.findById(currentuserId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.USER_NOT_FOUND));
-    if (!Objects.equals(dto.newPassword, dto.repeatPassword)) {
-
-      return new ResponseEntity<>(NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH, BAD_REQUEST);
-    }
-    if (passwordEncoder.encode(dto.oldPassword).equals(getuser.getPassword())) {
-
-      return new ResponseEntity<>(PASSWORD_IS_SAME, OK);
+    if (!dto.newPassword.equals(dto.repeatPassword)) {
+      return UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
     }
 
-    if (!passwordEncoder.matches(dto.oldPassword, getuser.getPassword())) {
-      return new ResponseEntity<>(INCORRECT_PASSWORD, BAD_REQUEST);
+    if (passwordEncoder.encode(dto.oldPassword).equals(user.getPassword())) {
+      return UserConstMessages.PASSWORD_IS_SAME;
     }
-    var newPassword = passwordEncoder.encode(dto.newPassword);
-    getuser.setPassword(newPassword);
-    userRepository.save(getuser);
-    return new ResponseEntity<>(PASSWORD_CHANGED, OK);
 
+    if (!passwordEncoder.matches(dto.oldPassword, user.getPassword())) {
+      return UserConstMessages.INCORRECT_PASSWORD;
+    }
 
+    user.setPassword(passwordEncoder.encode(dto.newPassword));
+    userRepository.save(user);
+    return UserConstMessages.PASSWORD_CHANGED;
   }
+
 
   /**
    * Fetches a list of top-rated seller users.
@@ -413,6 +408,7 @@ public class UserServiceImpl implements UserService {
    * @param picture the uploaded file
    * @return the photo metadata, or null if failed
    */
+
   private UserPhoto saveUserPictureLocal(int userid, MultipartFile picture) {
 
     var userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
@@ -548,19 +544,13 @@ public class UserServiceImpl implements UserService {
    * @param authentication the auth object
    * @return {@link IsAdminDto} indicating admin status
    */
-  public ResponseEntity<IsAdminDto> checkifAdmin(Authentication authentication) {
-    var getusr = userRepository.findByEmail(authentication.getName());
-    if (getusr.isPresent()) {
-      if (getusr.get().getRole().equals(UserRoleEnum.ADMIN)) {
-        return new ResponseEntity(new IsAdminDto(true), OK);
-      }
-
-      return new ResponseEntity<>(new IsAdminDto(false), OK);
-
-    }
-    return ResponseEntity.status(BAD_REQUEST).body(null);
-
+  @Override
+  public IsAdminDto checkIfAdmin(Authentication authentication) {
+    return userRepository.findByEmail(authentication.getName())
+        .map(user -> new IsAdminDto(user.getRole() == UserRoleEnum.ADMIN))
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND));
   }
+
 
   /**
    * clears securityContext and logs out user

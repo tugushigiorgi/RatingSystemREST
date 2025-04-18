@@ -71,11 +71,11 @@ public interface UserService {
   /**
    * Changes the password for a user.
    *
-   * @param currentuserId the ID of the currently authenticated user
+   * @param currentUserId the ID of the currently authenticated user
    * @param dto           the password change request data
-   * @return a response indicating the result of the operation
+   * @return a String containing information
    */
-  ResponseEntity<String> changePassword(int currentuserId, ChangePasswordDto dto);
+  String changePassword(int currentUserId, ChangePasswordDto dto);
 
   /**
    * Retrieves a list of top-rated sellers.
@@ -88,7 +88,7 @@ public interface UserService {
    * Retrieves a seller's profile by user ID.
    *
    * @param userId the ID of the seller
-   * @return  SellerProfileDto
+   * @return SellerProfileDto
    */
   SellerProfileDto getSellerProfileById(int userId);
 
@@ -156,4 +156,10 @@ public interface UserService {
    * cleans securityContextHolder.
    */
   void logout(HttpServletRequest request);
+
+  /**
+   * check if admin.
+   */
+  IsAdminDto checkIfAdmin(Authentication authentication);
+
 }
