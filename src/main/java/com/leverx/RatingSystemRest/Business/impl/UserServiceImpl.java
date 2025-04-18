@@ -1,5 +1,6 @@
 package com.leverx.RatingSystemRest.Business.impl;
 
+import static com.leverx.RatingSystemRest.Business.ConstMessages.AuthConstMessages.LOGGED_OUT_FAILED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FAILED_TO_DELETE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FOLDER_AND_ITS_CONTENT_DELETED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FOLDER_DOES_NOT_EXIST;
@@ -551,7 +552,7 @@ public class UserServiceImpl implements UserService {
       request.getSession().invalidate();
       SecurityContextHolder.clearContext();
     } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, UserConstMessages.LOGGED_OUT_FAILED);
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, LOGGED_OUT_FAILED);
     }
   }
 
