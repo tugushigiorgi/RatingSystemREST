@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
    *
    * @return a list of users who are unapproved sellers with verified emails.
    */
-  @Query("SELECT u FROM User u WHERE u.role = 'SELLER' and u.isApprovedByAdmin = false and u.HasVerifiedEmail = true")
+  @Query("SELECT u FROM User u WHERE u.role = 'SELLER' and u.isApprovedByAdmin = false and u.hasVerifiedEmail = true")
   List<User> notApprovedSellersList();
 
   /**
@@ -49,8 +49,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
       FROM User u 
       WHERE u.role = 'SELLER' 
       AND u.isApprovedByAdmin = true
-      AND u.TotalRating > 0 
-      ORDER BY u.TotalRating DESC
+      AND u.totalRating > 0 
+      ORDER BY u.totalRating DESC
       LIMIT 5
       """)
   List<User> findTop5RatedSellers();

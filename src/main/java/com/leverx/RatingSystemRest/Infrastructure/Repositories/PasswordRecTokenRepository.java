@@ -32,7 +32,7 @@ public interface PasswordRecTokenRepository extends JpaRepository<PasswordRecove
   @Modifying
   @Transactional
   @Query(value = "DELETE FROM PasswordRecoveryToken c WHERE c.id = :id")
-  void deletebyId(int id);
+  void deleteById(int id);
 
 
 }

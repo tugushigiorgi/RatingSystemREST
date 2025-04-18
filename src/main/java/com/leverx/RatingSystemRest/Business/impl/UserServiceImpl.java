@@ -4,9 +4,14 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.AuthConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.PICTURE_CANNOT_BE_SAVED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.ACCOUNT_IS_ALREADY_VERIFIED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.AUTHENTICATION_FAILED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_ALREADY_EXISTS;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_NOT_VERIFIED;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INCORRECT_PASSWORD;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INVALID_TOKEN;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_CHANGED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_DOES_NOT_MATCH;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_IS_SAME;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
@@ -19,8 +24,8 @@ import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
-import com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages;
 import com.leverx.RatingSystemRest.Business.Interfaces.UserService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.PasswordRecoveryToken;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.Token;
@@ -57,7 +62,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -292,28 +296,28 @@ public class UserServiceImpl implements UserService {
     var user = userRepository.findById(currentUserId)
         .orElseThrow(() -> {
           log.warn("User with ID {} not found while attempting password change", currentUserId);
-          return new ResponseStatusException(BAD_REQUEST, UserConstMessages.USER_NOT_FOUND);
+          return new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND);
         });
 
     if (!dto.newPassword.equals(dto.repeatPassword)) {
       log.warn("new and repeat password do not match");
-      return UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
+      return NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
     }
 
     if (passwordEncoder.encode(dto.oldPassword).equals(user.getPassword())) {
       log.warn("User {} tried to change password to the same one", currentUserId);
-      return UserConstMessages.PASSWORD_IS_SAME;
+      return PASSWORD_IS_SAME;
     }
 
     if (!passwordEncoder.matches(dto.oldPassword, user.getPassword())) {
       log.warn("User {} provided incorrect old password", currentUserId);
-      return UserConstMessages.INCORRECT_PASSWORD;
+      return INCORRECT_PASSWORD;
     }
 
     user.setPassword(passwordEncoder.encode(dto.newPassword));
     userRepository.save(user);
     log.info("Password changed successfully for user {}", currentUserId);
-    return UserConstMessages.PASSWORD_CHANGED;
+    return PASSWORD_CHANGED;
   }
 
 
@@ -392,7 +396,7 @@ public class UserServiceImpl implements UserService {
     var checkifExists = userRepository.findByEmail(dto.email);
     if (checkifExists.isPresent()) {
       log.warn("Attempt to register with an existing email: {}", dto.email);
-      throw new ResponseStatusException(BAD_REQUEST, UserConstMessages.EMAIL_ALREADY_EXISTS);
+      throw new ResponseStatusException(BAD_REQUEST, EMAIL_ALREADY_EXISTS);
     }
 
     log.info("Creating new user with email: {}", dto.email);
@@ -625,7 +629,7 @@ public class UserServiceImpl implements UserService {
 
     if (!dto.getNewpassword().equals(dto.getPassword())) {
       log.error("Passwords do not match for user: {}", user.getEmail());
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PASSWORD_DOES_NOT_MATCH);
+      throw new ResponseStatusException(BAD_REQUEST, PASSWORD_DOES_NOT_MATCH);
     }
 
     user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -649,12 +653,12 @@ public class UserServiceImpl implements UserService {
     var getUser = userRepository.findByEmail(loginDto.getEmail())
         .orElseThrow(() -> {
           log.error("User not found for email: {}", loginDto.getEmail());
-          return new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND);
+          return new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND);
         });
 
     if (!getUser.isApprovedByAdmin()) {
       log.warn("User is not approved by admin for email: {}", loginDto.getEmail());
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_APPROVED);
+      throw new ResponseStatusException(BAD_REQUEST, USER_NOT_APPROVED);
     }
 
     try {
@@ -663,7 +667,7 @@ public class UserServiceImpl implements UserService {
       );
     } catch (Exception e) {
       log.error("Authentication failed for email: {}", loginDto.getEmail());
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, AUTHENTICATION_FAILED);
+      throw new ResponseStatusException(UNAUTHORIZED, AUTHENTICATION_FAILED);
     }
 
     String token = jwtFactory.generateToken(getUser);
@@ -716,7 +720,7 @@ public class UserServiceImpl implements UserService {
         })
         .orElseThrow(() -> {
           log.error("No user found for email: {}", email);
-          return new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND);
+          return new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND);
         });
   }
 
