@@ -17,4 +17,7 @@ public final class GameObjectMessages {
 
   public static final String PICTURE_CANNOT_BE_SAVED = "Picture cannot be saved";
 
+
+
+
 }

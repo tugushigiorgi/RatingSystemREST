@@ -19,18 +19,18 @@ public interface GameObjectService {
    * @param dto    the data transfer object containing GameObject data
    * @param photo  the GameObject picture uploaded from local storage
    * @param userId the ID of the owner of the GameObject
-   * @return a response containing the result of the operation
+
    */
-  ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId);
+  void add(addGameObjectDto dto, MultipartFile photo, int userId);
 
   /**
    * Removes a GameObject.
    *
    * @param gameObjectId the ID of the GameObject to be removed
    * @param userId       the ID of the owner of the GameObject
-   * @return a response containing the result of the operation
+
    */
-  ResponseEntity<String> remove(int gameObjectId, int userId);
+  void remove(int gameObjectId, int userId);
 
   /**
    * Updates an existing GameObject.
@@ -38,9 +38,9 @@ public interface GameObjectService {
    * @param dto    the data transfer object containing updated GameObject data
    * @param photo  the new GameObject picture uploaded from local storage
    * @param userId the ID of the owner of the GameObject
-   * @return a response containing the result of the operation
+
    */
-  ResponseEntity<String> update(UpdateGameObject dto, MultipartFile photo, int userId);
+  void update(UpdateGameObject dto, MultipartFile photo, int userId);
 
   /**
    * Retrieves GameObjects owned by the specified seller.

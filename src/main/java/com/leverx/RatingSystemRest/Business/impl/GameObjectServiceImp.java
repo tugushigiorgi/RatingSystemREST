@@ -2,16 +2,12 @@ package com.leverx.RatingSystemRest.Business.impl;
 
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.PERMISSION_DENIED_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.PICTURE_CANNOT_BE_SAVED;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.GAME_ADDED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.GAME_NOT_FOUND;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.OBJECT_UPDATED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.SOMETHING_WENT_WRONG;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.SUCCESSFULLY_DELETED_WITH_ID;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
-import static org.springframework.http.HttpStatus.OK;
 
 import com.leverx.RatingSystemRest.Business.Interfaces.GameObjectService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
@@ -64,16 +60,17 @@ public class GameObjectServiceImp implements GameObjectService {
    * @param dto    the game object data transfer object
    * @param photo  the image file associated with the game
    * @param userId the ID of the seller adding the game
-   * @return HTTP response indicating success or failure
    */
   @Override
-  public ResponseEntity<String> add(addGameObjectDto dto, MultipartFile photo, int userId) {
+  public void add(addGameObjectDto dto, MultipartFile photo, int userId) {
     var currentUser = userRepository.findById(userId)
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
+
     var savedPicture = saveNewPictureOnLocalFolder(userId, photo);
     if (savedPicture == null) {
-      return new ResponseEntity<>(PICTURE_CANNOT_BE_SAVED, INTERNAL_SERVER_ERROR);
+      throw new ResponseStatusException(INTERNAL_SERVER_ERROR, PICTURE_CANNOT_BE_SAVED);
     }
+
     var gameObject = GameObject.builder()
         .price(dto.getPrice())
         .title(dto.getTitle())
@@ -82,41 +79,42 @@ public class GameObjectServiceImp implements GameObjectService {
         .createdAt(LocalDateTime.now())
         .picture(savedPicture)
         .build();
+
     savedPicture.setGameObject(gameObject);
     gameObjectRepository.save(gameObject);
-
-    return new ResponseEntity<>(GAME_ADDED, OK);
   }
+
 
   /**
    * Removes a game object if the user is authorized.
    *
    * @param gameObjectId the ID of the game object to be removed
    * @param userId       the ID of the requesting user
-   * @return HTTP response indicating success or failure
    */
   @Override
   @Transactional
-  public ResponseEntity<String> remove(int gameObjectId, int userId) {
-    var getcurrentUser = userRepository.findById(userId)
+  public void remove(int gameObjectId, int userId) {
+    var getCurrentUser = userRepository.findById(userId)
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
     var currentObject = gameObjectRepository.findById(gameObjectId)
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND));
 
-    if (!Objects.equals(currentObject.getUser().getId(), getcurrentUser.getId())) {
-      return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
+    if (!Objects.equals(currentObject.getUser().getId(), getCurrentUser.getId())) {
+      throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
     try {
       gameObjectRepository.delete(currentObject);
+
       var path = Paths.get(uploadDir + File.separator + currentObject.getPicture().getUrl());
-      Files.delete(path);
-      return new ResponseEntity<>(SUCCESSFULLY_DELETED_WITH_ID + gameObjectId, OK);
-    } catch (Exception e) {
-      return new ResponseEntity<>(SOMETHING_WENT_WRONG, INTERNAL_SERVER_ERROR);
+      Files.deleteIfExists(path);
+
+    } catch (IOException e) {
+      throw new ResponseStatusException(INTERNAL_SERVER_ERROR, SOMETHING_WENT_WRONG);
     }
   }
+
 
   /**
    * Updates a game object and optionally its associated image.
@@ -124,10 +122,10 @@ public class GameObjectServiceImp implements GameObjectService {
    * @param dto    the update request
    * @param photo  a new image file, if the image is being updated
    * @param userId the ID of the user performing the update
-   * @return HTTP response indicating success or failure
    */
   @Override
-  public ResponseEntity<String> update(UpdateGameObject dto, MultipartFile photo, int userId) {
+  @Transactional
+  public void update(UpdateGameObject dto, MultipartFile photo, int userId) {
     var currentUser = userRepository.findById(userId)
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
@@ -135,36 +133,46 @@ public class GameObjectServiceImp implements GameObjectService {
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, GAME_NOT_FOUND));
 
     if (!Objects.equals(currentObject.getUser().getId(), currentUser.getId())) {
-      return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
+      throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
-    if (dto.getPrice() != 0 && dto.price != currentObject.getPrice()) {
+
+    if (dto.getPrice() != 0 && dto.getPrice() != currentObject.getPrice()) {
       currentObject.setPrice(dto.getPrice());
     }
-    if (dto.getTitle() != null && !currentObject.getTitle().equals(dto.getTitle())) {
+
+    if (dto.getTitle() != null && !dto.getTitle().equals(currentObject.getTitle())) {
       currentObject.setTitle(dto.getTitle());
     }
-    if (dto.getText() != null && !currentObject.getText().equals(dto.getText())) {
+
+    if (dto.getText() != null && !dto.getText().equals(currentObject.getText())) {
       currentObject.setText(dto.getText());
     }
 
-    if (photo != null) {
-      var updatePicture = updatePictureOnLocalFolder(currentObject.getPicture().getUrl(), userId, photo);
-      if (updatePicture != null) {
-        currentObject.setPicture(updatePicture);
-        currentObject.setUpdatedAt(LocalDateTime.now());
-        updatePicture.setGameObject(currentObject);
-        gameObjectPictureRepository.delete(currentObject.getPicture());
-        gameObjectRepository.save(currentObject);
-        gameObjectPictureRepository.save(updatePicture);
-        return new ResponseEntity<>(OBJECT_UPDATED, OK);
+
+    if (photo != null && !photo.isEmpty()) {
+      var oldPicture = currentObject.getPicture();
+      var updatedPicture = updatePictureOnLocalFolder(oldPicture.getUrl(), userId, photo);
+
+      if (updatedPicture == null) {
+        throw new ResponseStatusException(INTERNAL_SERVER_ERROR, PICTURE_CANNOT_BE_SAVED);
       }
+
+      updatedPicture.setGameObject(currentObject);
+      currentObject.setPicture(updatedPicture);
+      currentObject.setUpdatedAt(LocalDateTime.now());
+
+      gameObjectPictureRepository.delete(oldPicture);
+      gameObjectRepository.save(currentObject);
+      gameObjectPictureRepository.save(updatedPicture);
+      return;
     }
+
 
     currentObject.setUpdatedAt(LocalDateTime.now());
     gameObjectRepository.save(currentObject);
-    return new ResponseEntity<>(OBJECT_UPDATED, OK);
   }
+
 
   /**
    * Retrieves all game objects for a specific seller.

@@ -523,7 +523,7 @@ public class UserServiceImpl implements UserService {
       }
 
     }
-    return 0;
+    throw new ResponseStatusException(BAD_REQUEST);
   }
 
   /**
@@ -546,13 +546,18 @@ public class UserServiceImpl implements UserService {
 
   }
 
+  /**
+   * clears securityContext and logs out user
+   *
+   * @param request to invalidate
+   */
   @Override
   public void logout(HttpServletRequest request) {
     try {
       request.getSession().invalidate();
       SecurityContextHolder.clearContext();
     } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, LOGGED_OUT_FAILED);
+      throw new ResponseStatusException(INTERNAL_SERVER_ERROR, LOGGED_OUT_FAILED);
     }
   }
 
