@@ -1,9 +1,6 @@
 package com.leverx.RatingSystemRest.Business.impl;
 
 import static com.leverx.RatingSystemRest.Business.ConstMessages.AuthConstMessages.LOGGED_OUT_FAILED;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FAILED_TO_DELETE;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FOLDER_AND_ITS_CONTENT_DELETED;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.FOLDER_DOES_NOT_EXIST;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessages.PICTURE_CANNOT_BE_SAVED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.ACCOUNT_IS_ALREADY_VERIFIED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.AUTHENTICATION_FAILED;
@@ -56,6 +53,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -72,6 +70,7 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * Service which implement UserService interface.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -92,11 +91,16 @@ public class UserServiceImpl implements UserService {
    * @return a list of users pending approval as {@link AdminNotApprovedUserDto}, or empty  if none found.
    */
   public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
+    log.info("Fetching list of sellers who have not been approved yet.");
+
     var getlist = userRepository.notApprovedSellersList();
 
     if (CollectionUtils.isEmpty(getlist)) {
+      log.warn("No registration requests found for sellers.");
+
       return emptyList();
     }
+    log.info("Successfully retrieved {} seller registration requests.", getlist.size());
 
     return getlist.stream()
         .map(AdminNotApprovedUserDto::toDto)
@@ -110,15 +114,22 @@ public class UserServiceImpl implements UserService {
    * @param sellerId the ID of the seller to approve
    */
   public void acceptSellerRegistrationRequest(int sellerId) {
+    log.info("Attempting to approve seller with ID: {}", sellerId);
+
     var currentSeller = userRepository.findById(sellerId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("Seller with ID {} not found.", sellerId);
+          return new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND);
+        });
 
     if (!currentSeller.isHasVerifiedEmail()) {
+      log.warn("Seller with ID {} has not verified their email.", sellerId);
       throw new ResponseStatusException(BAD_REQUEST, EMAIL_NOT_VERIFIED);
     }
 
     currentSeller.setApprovedByAdmin(true);
     userRepository.save(currentSeller);
+    log.info("Seller with ID {} has been approved by the admin.", sellerId);
   }
 
 
@@ -129,11 +140,17 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public List<DetailedUserDto> detailedRegisteredUsers() {
+
+    log.info("Fetching list of approved sellers...");
+
     var users = userRepository.approvedSellersList();
 
     if (CollectionUtils.isEmpty(users)) {
+      log.info("No approved sellers found.");
       return emptyList();
     }
+
+    log.info("Found {} approved seller(s).", users.size());
 
     return users.stream()
         .map(DetailedUserDto::toDetailedUserDto)
@@ -149,7 +166,17 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public List<DetailedUserDto> getDetailedRegisteredUsersByUsername(String username) {
+    log.info("Fetching approved sellers with username: {}", username);
+
     var users = userRepository.getRegisteredSellerByUsername(username);
+
+    if (CollectionUtils.isEmpty(users)) {
+      log.info("No approved sellers found for username: {}", username);
+      return emptyList();
+    }
+
+    log.info("Found {} seller(s) with username: {}", users.size(), username);
+
     return users.stream()
         .map(DetailedUserDto::toDetailedUserDto)
         .toList();
@@ -165,12 +192,24 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public void deleteById(int userId) {
-    var user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND));
+    log.info("Attempting to delete user with ID: {}", userId);
 
-    deleteUserFolderByUrl(uploadDir + File.separator + userId);
+    var user = userRepository.findById(userId)
+        .orElseThrow(() -> {
+          log.warn("User with ID {} not found", userId);
+          return new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND);
+        });
+
+    log.info("User found: {}. Proceeding with deletion.", user.getUsername());
+
+    String userFolderPath = uploadDir + File.separator + userId;
+    deleteUserFolderByUrl(userFolderPath);
+    log.info("Deleted user's folder from path: {}", userFolderPath);
+
     userRepository.deleteById(userId);
+    log.info("Deleted user with ID: {}", userId);
   }
+
 
 
   /**
@@ -182,18 +221,22 @@ public class UserServiceImpl implements UserService {
   private boolean deleteUserFolderByUrl(String folderUrl) {
     try {
       var folderPath = Paths.get(folderUrl);
+
       if (!Files.exists(folderPath)) {
-        System.out.println(FOLDER_DOES_NOT_EXIST + folderUrl);
+        log.warn("Folder does not exist: {}", folderUrl);
         return false;
       }
+
       deleteRecursively(folderPath);
-      System.out.println(FOLDER_AND_ITS_CONTENT_DELETED + folderUrl);
+      log.info("Folder and its contents deleted: {}", folderUrl);
       return true;
+
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Failed to delete folder: {}. Error: {}", folderUrl, e.getMessage(), e);
       return false;
     }
   }
+
 
   /**
    * Recursively deletes all files and folders in the specified path.
@@ -203,19 +246,19 @@ public class UserServiceImpl implements UserService {
    */
   private static void deleteRecursively(Path path) throws IOException {
     try (Stream<Path> files = Files.walk(path)) {
-      files.sorted(Comparator.reverseOrder()).forEach(p -> {
-        try {
-          if (Files.isDirectory(p)) {
-            Files.delete(p);
-          } else {
-            Files.delete(p);
-          }
-        } catch (IOException e) {
-          System.err.println(FAILED_TO_DELETE + p);
-        }
-      });
+      files
+          .sorted(Comparator.reverseOrder())
+          .forEach(p -> {
+            try {
+              Files.delete(p);
+              log.debug("Deleted: {}", p);
+            } catch (IOException e) {
+              log.error("Failed to delete: {}", p, e);
+            }
+          });
     }
   }
+
 
   /**
    * Fetches public information for a user by ID.
@@ -225,11 +268,18 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public UserInfoDto getUserInfoById(int userId) {
-    var user = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND));
+    log.info("Attempting to retrieve user info for userId: {}", userId);
 
+    var user = userRepository.findById(userId)
+        .orElseThrow(() -> {
+          log.warn("User  with ID {} not found", userId);
+          return new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND);
+        });
+
+    log.info("Successfully retrieved user info for userId: {}", userId);
     return UserInfoDto.toDto(user);
   }
+
 
 
   /**
@@ -241,23 +291,32 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public String changePassword(int currentUserId, ChangePasswordDto dto) {
+    log.info("User {} is attempting to change their password", currentUserId);
+
     var user = userRepository.findById(currentUserId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.USER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.warn("User with ID {} not found while attempting password change", currentUserId);
+          return new ResponseStatusException(BAD_REQUEST, UserConstMessages.USER_NOT_FOUND);
+        });
 
     if (!dto.newPassword.equals(dto.repeatPassword)) {
+      log.warn("Password mismatch for user {}: new and repeat password do not match", currentUserId);
       return UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
     }
 
     if (passwordEncoder.encode(dto.oldPassword).equals(user.getPassword())) {
+      log.warn("User {} tried to change password to the same one", currentUserId);
       return UserConstMessages.PASSWORD_IS_SAME;
     }
 
     if (!passwordEncoder.matches(dto.oldPassword, user.getPassword())) {
+      log.warn("User {} provided incorrect old password", currentUserId);
       return UserConstMessages.INCORRECT_PASSWORD;
     }
 
     user.setPassword(passwordEncoder.encode(dto.newPassword));
     userRepository.save(user);
+    log.info("Password changed successfully for user {}", currentUserId);
     return UserConstMessages.PASSWORD_CHANGED;
   }
 
@@ -269,12 +328,15 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public List<UserInfoDto> getTopRatedSellers() {
+    log.info("Fetching top 5 rated sellers.");
     var sellers = userRepository.findTop5RatedSellers();
 
     if (CollectionUtils.isEmpty(sellers)) {
+      log.warn("No top rated sellers found.");
       return emptyList();
     }
 
+    log.info("Found {} top rated sellers.", sellers.size());
     return sellers.stream()
         .map(UserInfoDto::toDto)
         .toList();
@@ -289,19 +351,26 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public SellerProfileDto getSellerProfileById(int userId) {
+    log.info("Fetching seller profile for userId: {}", userId);
+
     var currentSeller = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.warn("Seller with userId {} not found.", userId);
+          return new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND);
+        });
 
     var info = UserInfoDto.toDto(currentSeller);
     var gameList = currentSeller.getGameObjects();
 
     if (CollectionUtils.isEmpty(gameList)) {
+      log.info("No game objects found for seller with userId: {}", userId);
       return SellerProfileDto.builder()
           .userInfo(info)
           .gameObjects(emptyList())
           .build();
-
     }
+
+    log.info("Found {} game objects for seller with userId: {}", gameList.size(), userId);
 
     var toDtoGameList = gameList.stream()
         .map(GameObjectDto::toDto)
@@ -314,6 +383,7 @@ public class UserServiceImpl implements UserService {
   }
 
 
+
   /**
    * Registers a new user with optional profile photo.
    *
@@ -323,10 +393,15 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public void registerUser(RegisterUserDto dto, MultipartFile photo) {
+    log.info("Registering new user with email: {}", dto.email);
+
     var checkifExists = userRepository.findByEmail(dto.email);
     if (checkifExists.isPresent()) {
+      log.warn("Attempt to register with an existing email: {}", dto.email);
       throw new ResponseStatusException(BAD_REQUEST, UserConstMessages.EMAIL_ALREADY_EXISTS);
     }
+
+    log.info("Creating new user with email: {}", dto.email);
 
     var newUser = User.builder()
         .createdAt(LocalDateTime.now())
@@ -340,16 +415,21 @@ public class UserServiceImpl implements UserService {
         .build();
 
     userRepository.save(newUser);
+    log.info("New user created with ID: {}", newUser.getId());
 
+    log.info("Attempting to save profile photo for user with ID: {}", newUser.getId());
     var savedPhoto = saveUserPictureLocal(newUser.getId(), photo);
     if (savedPhoto == null) {
+      log.error("Failed to save profile photo for user with ID: {}", newUser.getId());
       throw new ResponseStatusException(INTERNAL_SERVER_ERROR, PICTURE_CANNOT_BE_SAVED);
     }
 
     savedPhoto.setUser(newUser);
     userPhotoRepository.save(savedPhoto);
+    log.info("Profile photo saved for user with ID: {}", newUser.getId());
 
     sendRegistrationEmail(newUser);
+    log.info("Registration email sent to user with email: {}", newUser.getEmail());
   }
 
 
@@ -359,13 +439,30 @@ public class UserServiceImpl implements UserService {
    * @param user the user to send the token to
    */
   public void sendRegistrationEmail(User user) {
+    log.info("Generating registration token for user with email: {}", user.getEmail());
 
     var generatedToken = UUID.randomUUID().toString();
-    emailService.sendConfirmationEmail(user.getEmail(), generatedToken);
-    var token = Token.builder().token(generatedToken).createdAt(LocalDateTime.now()).expiresAt(LocalDateTime.now().plusHours(24)).user(user).build();
-    tokenRepository.save(token);
+    log.info("Generated token for user with email: {}", user.getEmail());
 
+    try {
+      emailService.sendConfirmationEmail(user.getEmail(), generatedToken);
+      log.info("Confirmation email sent to user with email: {}", user.getEmail());
+    } catch (Exception e) {
+      log.error("Failed to send confirmation email to user with email: {}", user.getEmail(), e);
+      throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Failed to send confirmation email");
+    }
+
+    var token = Token.builder()
+        .token(generatedToken)
+        .createdAt(LocalDateTime.now())
+        .expiresAt(LocalDateTime.now().plusHours(24))
+        .user(user)
+        .build();
+
+    tokenRepository.save(token);
+    log.info("Token saved in the database for user with email: {}", user.getEmail());
   }
+
 
   /**
    * Activates a user account via registration token.
@@ -375,64 +472,91 @@ public class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public void activateAccount(String token) {
+    log.info("Activating account with token: {}", token);
+
     var savedToken = tokenRepository.findByToken(token);
     if (savedToken.isEmpty()) {
+      log.warn("Token not found: {}", token);
       throw new ResponseStatusException(NOT_FOUND, TOKEN_NOT_FOUND);
     }
 
     var user = userRepository.findById(savedToken.get().getUser().getId())
-        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, USER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.warn("User not found for token: {}", token);
+          return new ResponseStatusException(NOT_FOUND, USER_NOT_FOUND);
+        });
 
     if (user.isHasVerifiedEmail()) {
+      log.info("User's account is already verified: {}", user.getEmail());
       throw new ResponseStatusException(BAD_REQUEST, ACCOUNT_IS_ALREADY_VERIFIED);
     }
 
     if (LocalDateTime.now().isAfter(savedToken.get().getExpiresAt())) {
+      log.warn("Token expired for user: {}, token: {}", user.getEmail(), token);
       tokenRepository.deleteById(savedToken.get().getId());
       sendRegistrationEmail(user);
+      log.info("New verification email sent to user: {}", user.getEmail());
       throw new ResponseStatusException(BAD_REQUEST, TOKEN_EXPIRED_NEW_TOKEN_SEND);
     }
 
     user.setHasVerifiedEmail(true);
     userRepository.save(user);
+    log.info("User's account activated successfully: {}", user.getEmail());
+
     tokenRepository.deleteTokenById(savedToken.get().getId());
+    log.info("Token with value {} deleted after successful account activation", token);
   }
+
 
 
   /**
    * Saves a profile picture to the local file system and returns a {@link UserPhoto} entity.
    *
-   * @param userid  the user ID
+   * @param userId  the user ID
    * @param picture the uploaded file
    * @return the photo metadata, or null if failed
    */
 
-  private UserPhoto saveUserPictureLocal(int userid, MultipartFile picture) {
+  private UserPhoto saveUserPictureLocal(int userId, MultipartFile picture) {
+    String userFolderPath = uploadDir + File.separator + userId + File.separator + "Profile";
+    File userFolder = new File(userFolderPath);
 
-    var userFolderPath = uploadDir + File.separator + userid + File.separator + "Profile";
-    var userFolder = new File(userFolderPath);
+
     if (!userFolder.exists()) {
-      userFolder.mkdirs();
+      log.info("Creating directory for user {}: {}", userId, userFolderPath);
+      if (userFolder.mkdirs()) {
+        log.info("Directory created successfully: {}", userFolderPath);
+      } else {
+        log.error("Failed to create directory: {}", userFolderPath);
+        return null;
+      }
     }
-    var uuid = UUID.randomUUID();
-    var modifiedFileName = uuid + picture.getOriginalFilename();
-    var publicUrl = userid + File.separator + "Profile" + File.separator + modifiedFileName;
-    var filePath = userFolderPath + File.separator + modifiedFileName;
+
+
+    String uuid = UUID.randomUUID().toString();
+    String modifiedFileName = uuid + picture.getOriginalFilename();
+    String publicUrl = userId + File.separator + "Profile" + File.separator + modifiedFileName;
+    String filePath = userFolderPath + File.separator + modifiedFileName;
+
     try {
-
-      var savedFile = new File(filePath);
+      File savedFile = new File(filePath);
       picture.transferTo(savedFile);
-      return UserPhoto.builder().url(publicUrl).size(picture.getSize()).extension(picture.getContentType()).photoName(modifiedFileName).build();
+      log.info("Picture saved successfully for user {} at path: {}", userId, filePath);
 
+      return UserPhoto.builder()
+          .url(publicUrl)
+          .size(picture.getSize())
+          .extension(picture.getContentType())
+          .photoName(modifiedFileName)
+          .build();
     } catch (IOException e) {
-
-
-      e.printStackTrace();
+      log.error("Failed to save picture for user {}: {}", userId, e.getMessage());
 
     }
-    return null;
 
+    return null;
   }
+
 
   /**
    * Sends a password recovery code to the user's email.
@@ -441,18 +565,26 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public void sendRecoverCode(String email) {
+    log.info("Attempting to find user by email: {}", email);
+
     var userOpt = userRepository.findByEmail(email);
     if (userOpt.isEmpty()) {
+      log.error("User not found with email: {}", email);
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.USER_NOT_FOUND_WITH_EMAIL);
     }
 
     var user = userOpt.get();
 
+
     if (user.getPasswordRecoveryToken() != null) {
+      log.warn("Password recovery token already sent for user: {}", email);
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT);
     }
 
+
     var generatedToken = UUID.randomUUID().toString();
+    log.info("Generated recovery token for user {}: {}", email, generatedToken);
+
     var recoveryToken = PasswordRecoveryToken.builder()
         .token(generatedToken)
         .createdAt(LocalDateTime.now())
@@ -460,9 +592,15 @@ public class UserServiceImpl implements UserService {
         .user(user)
         .build();
 
+
     pwdRecoveryTokenRepository.save(recoveryToken);
+    log.info("Password recovery token saved for user {} with expiration at: {}", email, recoveryToken.getExpiresAt());
+
+
     emailService.sendRecoverLink(user.getEmail(), generatedToken);
+    log.info("Password recovery email sent to: {}", email);
   }
+
 
   /**
    * Updates the password using a valid recovery token.
@@ -471,25 +609,40 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public void updatePassword(RecoverPasswordDto dto) {
+    log.info("Attempting to update password for token: {}", dto.getToken());
+
     var savedToken = pwdRecoveryTokenRepository.findByToken(dto.getToken())
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, INVALID_TOKEN));
+        .orElseThrow(() -> {
+          log.error("Invalid token: {}", dto.getToken());
+          return new ResponseStatusException(BAD_REQUEST, INVALID_TOKEN);
+        });
+
 
     if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
+      log.warn("Token expired for token: {}", dto.getToken());
       pwdRecoveryTokenRepository.deleteById(savedToken.getId());
       throw new ResponseStatusException(BAD_REQUEST, TOKEN_EXPIRED);
     }
 
     var user = userRepository.findById(savedToken.getUser().getId())
-        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, USER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("User not found for token: {}", dto.getToken());
+          return new ResponseStatusException(NOT_FOUND, USER_NOT_FOUND);
+        });
 
-    if (!dto.getNewpassword().equals(dto.getPassword())) {
+     if (!dto.getNewpassword().equals(dto.getPassword())) {
+      log.error("Passwords do not match for user: {}", user.getEmail());
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PASSWORD_DOES_NOT_MATCH);
     }
 
-    user.setPassword(passwordEncoder.encode(dto.getPassword()));
+     user.setPassword(passwordEncoder.encode(dto.getPassword()));
     userRepository.save(user);
-    pwdRecoveryTokenRepository.deletebyId(savedToken.getId());
+    log.info("Password successfully updated for user: {}", user.getEmail());
+
+     pwdRecoveryTokenRepository.deleteById(savedToken.getId());
+    log.info("Password recovery token deleted for token: {}", dto.getToken());
   }
+
 
 
   /**
@@ -499,10 +652,16 @@ public class UserServiceImpl implements UserService {
    * @return JwtDto
    */
   public JwtDto login(LoginDto loginDto) {
+    log.info("Attempting login for email: {}", loginDto.getEmail());
+
     var getUser = userRepository.findByEmail(loginDto.getEmail())
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND));
+        .orElseThrow(() -> {
+          log.error("User not found for email: {}", loginDto.getEmail());
+          return new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND);
+        });
 
     if (!getUser.isApprovedByAdmin()) {
+      log.warn("User is not approved by admin for email: {}", loginDto.getEmail());
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_APPROVED);
     }
 
@@ -511,10 +670,13 @@ public class UserServiceImpl implements UserService {
           new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
       );
     } catch (Exception e) {
+      log.error("Authentication failed for email: {}", loginDto.getEmail());
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, AUTHENTICATION_FAILED);
     }
 
     String token = jwtFactory.generateToken(getUser);
+    log.info("Successful login for email: {}. Token generated.", loginDto.getEmail());
+
     return new JwtDto(token, getUser.getRole().toString());
   }
 
@@ -526,16 +688,21 @@ public class UserServiceImpl implements UserService {
    * @return the user ID or 0 if not found
    */
   public int retriaveLogedUserId(Authentication authentication) {
+    log.info("Attempting to retrieve user ID for logged-in user with email: {}", authentication.getName());
+
     if (authentication.getName() != null) {
       var user = userRepository.findByEmail(authentication.getName());
       if (user.isPresent()) {
+        log.info("User found for email: {}. User ID: {}", authentication.getName(), user.get().getId());
         return user.get().getId();
+      } else {
+        log.warn("No user found for email: {}", authentication.getName());
       }
-
     }
-    throw new ResponseStatusException(BAD_REQUEST);
-  }
 
+    log.error("Failed to retrieve user ID: Authentication name is null or user not found.");
+    throw new ResponseStatusException(BAD_REQUEST, "User not found or invalid authentication");
+  }
 
 
   /**
@@ -546,25 +713,43 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public IsAdminDto checkIfAdmin(Authentication authentication) {
-    return userRepository.findByEmail(authentication.getName())
-        .map(user -> new IsAdminDto(user.getRole() == UserRoleEnum.ADMIN))
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND));
+    String email = authentication.getName();
+    log.info("Checking if user with email {} is an admin.", email);
+
+    return userRepository.findByEmail(email)
+        .map(user -> {
+          boolean isAdmin = user.getRole() == UserRoleEnum.ADMIN;
+          log.info("User with email {} is {}admin.", email, isAdmin ? "" : "not ");
+          return new IsAdminDto(isAdmin);
+        })
+        .orElseThrow(() -> {
+          log.error("No user found for email: {}", email);
+          return new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND);
+        });
   }
 
 
+
   /**
-   * clears securityContext and logs out user
+   * clears securityContext and logs out user.
    *
    * @param request to invalidate
    */
   @Override
   public void logout(HttpServletRequest request) {
     try {
+      String sessionId = request.getSession().getId();
+      log.info("Logging out user with session ID: {}", sessionId);
+
       request.getSession().invalidate();
       SecurityContextHolder.clearContext();
+
+      log.info("User with session ID: {} has been logged out successfully.", sessionId);
     } catch (Exception e) {
+      log.error("Failed to log out user. Error: {}", e.getMessage(), e);
       throw new ResponseStatusException(INTERNAL_SERVER_ERROR, LOGGED_OUT_FAILED);
     }
   }
+
 
 }

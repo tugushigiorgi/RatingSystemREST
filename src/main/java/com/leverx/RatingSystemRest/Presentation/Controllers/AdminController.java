@@ -126,9 +126,6 @@ public class AdminController {
   public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUserListByUsername(@PathVariable String username) {
     var users = userServiceImpl.getDetailedRegisteredUsersByUsername(username);
 
-    if (users.isEmpty()) {
-      return ResponseEntity.noContent().build();
-    }
     return ResponseEntity.ok(users);
   }
 
