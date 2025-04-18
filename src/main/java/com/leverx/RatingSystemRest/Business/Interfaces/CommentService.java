@@ -1,10 +1,9 @@
 package com.leverx.RatingSystemRest.Business.Interfaces;
 
+import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.CommentUpdateDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.AddCommentDto;
 import java.util.List;
-import org.springframework.http.ResponseEntity;
 
 /**
  * Contract for Comment Service.
@@ -25,9 +24,9 @@ public interface CommentService {
    *
    * @param anonymousId the ID of the anonymous user
    * @param commentId   the ID of the comment
-   * @return response indicating the result
+
    */
-  ResponseEntity<String> delete(int anonymousId, int commentId);
+  void delete(int anonymousId, int commentId);
 
   /**
    * Updates a comment.
@@ -71,7 +70,7 @@ public interface CommentService {
    * Declines a user review.
    *
    * @param commentId the ID of the comment
-   * @return response indicating the result
+
    */
-  ResponseEntity<String> declineUserReview(int commentId);
+  void declineUserReview(int commentId);
 }
