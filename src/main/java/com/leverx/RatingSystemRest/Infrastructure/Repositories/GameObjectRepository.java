@@ -32,7 +32,7 @@ public interface GameObjectRepository extends JpaRepository<GameObject, Integer>
    * @param sellerRating the minimum rating of the seller.
    * @return a list of game objects that match the title and seller rating criteria.
    */
-  @Query("SELECT c FROM GameObject c WHERE c.title LIKE %:title% AND c.user.TotalRating >= :sellerRating")
+  @Query("SELECT c FROM GameObject c WHERE c.title LIKE %:title% AND c.user.totalRating >= :sellerRating")
   List<GameObject> filterByTitleAndRating(@Param("title") String title, @Param("sellerRating") int sellerRating);
 
   /**
@@ -42,6 +42,6 @@ public interface GameObjectRepository extends JpaRepository<GameObject, Integer>
    * @param sellerRating the minimum rating of the seller.
    * @return a list of game objects where the seller's rating is greater than or equal to the specified rating.
    */
-  @Query("SELECT c FROM GameObject c WHERE c.user.TotalRating >= :sellerRating")
+  @Query("SELECT c FROM GameObject c WHERE c.user.totalRating >= :sellerRating")
   List<GameObject> filterBySellerRating(@Param("sellerRating") int sellerRating);
 }
