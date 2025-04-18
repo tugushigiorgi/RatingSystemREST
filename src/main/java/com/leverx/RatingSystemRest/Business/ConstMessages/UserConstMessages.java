@@ -46,6 +46,8 @@ public final class UserConstMessages {
 
   public static final String INCORRECT_PASSWORD = "Incorrect password";
 
+  public static final String EMAIL_NOT_VERIFIED = "Email not verified";
+
   public static final String NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH = "New and Repeat Password does not match";
 
   public static final String PASSWORD_IS_SAME = "Password is same, submit different one";

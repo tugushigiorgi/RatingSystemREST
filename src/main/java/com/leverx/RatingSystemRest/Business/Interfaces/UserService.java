@@ -4,7 +4,11 @@ package com.leverx.RatingSystemRest.Business.Interfaces;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.User;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.IsAdminDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.*;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.RegisterUserDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.SellerProfileDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.UserInfoDto;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,22 +25,22 @@ public interface UserService {
    *
    * @return a response containing the list of pending seller requests
    */
-  ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests();
+  List<AdminNotApprovedUserDto> getSellersRegistrationRequests();
 
   /**
    * Accepts a pending seller registration request.
    *
    * @param sellerId the ID of the seller to approve
-   * @return a response containing the result of the operation
+
    */
-  ResponseEntity<String> acceptSellerRegistrationRequest(int sellerId);
+  void acceptSellerRegistrationRequest(int sellerId);
 
   /**
    * Retrieves a list of all detailed registered users.
    *
    * @return a response containing the list of detailed users
    */
-  ResponseEntity<List<DetailedUserDto>> detailedRegisteredUsers();
+  List<DetailedUserDto> detailedRegisteredUsers();
 
   /**
    * Retrieves detailed user information filtered by username.
@@ -44,15 +48,15 @@ public interface UserService {
    * @param username the username to filter users by
    * @return a response containing the list of matched users
    */
-  ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUsersByUsername(String username);
+  List<DetailedUserDto>  getDetailedRegisteredUsersByUsername(String username);
 
   /**
    * Deletes a user by their ID.
    *
    * @param userId the ID of the user to delete
-   * @return a response containing the result of the operation
+
    */
-  ResponseEntity<String> deleteById(int userId);
+  void deleteById(int userId);
 
   /**
    * Retrieves user info by user ID.

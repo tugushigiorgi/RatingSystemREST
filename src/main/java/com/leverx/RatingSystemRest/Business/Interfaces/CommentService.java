@@ -66,9 +66,9 @@ public interface CommentService {
      * Approves a user review.
      *
      * @param commentId the ID of the comment
-     * @return response indicating the result
+
      */
-    ResponseEntity<String> approveUserReview(int commentId);
+    void approveUserReview(int commentId);
 
     /**
      * Declines a user review.

@@ -7,6 +7,7 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.ACCOUNT_IS_ALREADY_VERIFIED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.AUTHENTICATION_FAILED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_ALREADY_EXISTS;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_NOT_VERIFIED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_SENT_SUCCESSFULLY;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INCORRECT_PASSWORD;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
@@ -14,15 +15,14 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_IS_SAME;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_UPDATED_SUCCESSFULLY;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_APPROVED_SELLER_REGISTRATION;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SUCCESSFULLY_ENABLED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_NOT_FOUND;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_DELETED_SUCCESSFULLY;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND_WITH_EMAIL;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_REGISTERED_SUCCESSFULLY;
+import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -43,9 +43,9 @@ import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserPhotoReposito
 import com.leverx.RatingSystemRest.Infrastructure.Repositories.UserRepository;
 import com.leverx.RatingSystemRest.Infrastructure.Security.JwtFactory;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.ChangePasswordDto;
-import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.IsAdminDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.JwtDto;
+import com.leverx.RatingSystemRest.Presentation.Dto.AuthDtos.RecoverPasswordDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.AdminNotApprovedUserDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.UserDtos.DetailedUserDto;
@@ -99,48 +99,57 @@ public class UserServiceImpl implements UserService {
   /**
    * Retrieves all pending seller registration requests.
    *
-   * @return a list of users pending approval as {@link AdminNotApprovedUserDto}, or NO_CONTENT if none found.
+   * @return a list of users pending approval as {@link AdminNotApprovedUserDto}, or empty  if none found.
    */
-  public ResponseEntity<List<AdminNotApprovedUserDto>> getSellersRegistrationRequests() {
-
+  public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
     var getlist = userRepository.notApprovedSellersList();
+
     if (CollectionUtils.isEmpty(getlist)) {
-      return new ResponseEntity<>(NO_CONTENT);
+      return emptyList();
     }
-    var mapToDtoList = getlist.stream().map(AdminNotApprovedUserDto::toDto).toList();
-    return new ResponseEntity<>(mapToDtoList, OK);
+
+    return getlist.stream()
+        .map(AdminNotApprovedUserDto::toDto)
+        .toList();
   }
+
 
   /**
    * Approves a seller registration by ID.
    *
    * @param sellerId the ID of the seller to approve
-   * @return success message or BAD_REQUEST if seller is not found or not email-verified
    */
-  public ResponseEntity<String> acceptSellerRegistrationRequest(int sellerId) {
-    var currentSeller = userRepository.findById(sellerId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
+  public void acceptSellerRegistrationRequest(int sellerId) {
+    var currentSeller = userRepository.findById(sellerId)
+        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
+
     if (!currentSeller.isHasVerifiedEmail()) {
-      return new ResponseEntity<>(BAD_REQUEST);
+      throw new ResponseStatusException(BAD_REQUEST, EMAIL_NOT_VERIFIED);
     }
+
     currentSeller.setApprovedByAdmin(true);
     userRepository.save(currentSeller);
-
-    return new ResponseEntity<>(SUCCESSFULLY_APPROVED_SELLER_REGISTRATION, OK);
   }
+
 
   /**
    * Retrieves a detailed list of approved seller users.
    *
-   * @return list of {@link DetailedUserDto} or NO_CONTENT
+   * @return list of {@link DetailedUserDto} or empty
    */
-  public ResponseEntity<List<DetailedUserDto>> detailedRegisteredUsers() {
+  @Override
+  public List<DetailedUserDto> detailedRegisteredUsers() {
     var users = userRepository.approvedSellersList();
+
     if (CollectionUtils.isEmpty(users)) {
-      return new ResponseEntity<>(NO_CONTENT);
+      return emptyList();
     }
-    var toDtoList = users.stream().map(DetailedUserDto::toDetailedUserDto).toList();
-    return new ResponseEntity<>(toDtoList, OK);
+
+    return users.stream()
+        .map(DetailedUserDto::toDetailedUserDto)
+        .toList();
   }
+
 
   /**
    * Retrieves detailed seller information filtered by username.
@@ -148,15 +157,14 @@ public class UserServiceImpl implements UserService {
    * @param username the seller's username
    * @return a list of matching sellers or NO_CONTENT
    */
-  public ResponseEntity<List<DetailedUserDto>> getDetailedRegisteredUsersByUsername(String username) {
+  @Override
+  public List<DetailedUserDto> getDetailedRegisteredUsersByUsername(String username) {
     var users = userRepository.getRegisteredSellerByUsername(username);
-    if (users.isEmpty()) {
-      return new ResponseEntity<>(NO_CONTENT);
-    }
-    var toDtoList = users.stream()
-        .map(DetailedUserDto::toDetailedUserDto).toList();
-    return new ResponseEntity<>(toDtoList, OK);
+    return users.stream()
+        .map(DetailedUserDto::toDetailedUserDto)
+        .toList();
   }
+
 
   /**
    * Deletes a user by ID along with their profile picture folder.
@@ -164,16 +172,16 @@ public class UserServiceImpl implements UserService {
    * @param userId the ID of the user to delete
    * @return a confirmation message or error if user not found
    */
+  @Override
   @Transactional
-  public ResponseEntity<String> deleteById(int userId) {
-
-    var user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND));
+  public void deleteById(int userId) {
+    var user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, USER_NOT_FOUND));
 
     deleteUserFolderByUrl(uploadDir + File.separator + userId);
     userRepository.deleteById(userId);
-
-    return new ResponseEntity<>(USER_DELETED_SUCCESSFULLY, OK);
   }
+
 
   /**
    * Deletes a user's folder and its contents from the filesystem.
