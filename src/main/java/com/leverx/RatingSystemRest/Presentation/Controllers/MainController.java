@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST controller that provides the main public endpoints for the application.
- * Handles operations related to viewing seller profiles, searching game objects, and managing comments.
+
  */
 @RestController
 @AllArgsConstructor

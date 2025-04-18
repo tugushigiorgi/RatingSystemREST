@@ -47,19 +47,25 @@ public class CommentServiceImp implements CommentService {
       return new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND_MESSAGE);
     });
 
-    var hasMatchingAnonymousId = currentSeller.getComments().stream().anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
+    var hasMatchingAnonymousId = currentSeller.getComments().stream()
+        .anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
 
     if (hasMatchingAnonymousId) {
-      log.warn("Duplicate anonymous comment detected for sellerId={}, anonymousId={}", dto.sellerId, dto.anonymousId);
+      log.warn("already submitted  :sellerId={} anonymousId={}", dto.sellerId, dto.anonymousId);
       throw new ResponseStatusException(BAD_REQUEST);
     }
 
-    var newComment = Comment.builder().approved(false).createdAt(LocalDateTime.now()).user(currentSeller).rating(dto.getReview()).message(dto.getComment()).anonymousId(dto.anonymousId).build();
+    var newComment = Comment.builder()
+        .approved(false)
+        .createdAt(LocalDateTime.now())
+        .user(currentSeller)
+        .rating(dto.getReview()).message(dto.getComment())
+        .anonymousId(dto.anonymousId).build();
 
     currentSeller.getComments().add(newComment);
     commentRepository.save(newComment);
     userRepository.save(currentSeller);
-    log.info("Successfully added comment for sellerId={}, anonymousId={}", dto.sellerId, dto.anonymousId);
+    log.info("added comment for sellerId={}, anonymousId={}", dto.sellerId, dto.anonymousId);
 
   }
 
@@ -69,7 +75,6 @@ public class CommentServiceImp implements CommentService {
    *
    * @param anonymousId the ID of the anonymous user
    * @param commentId   the ID of the comment to delete
-
    */
   @Override
   @Transactional
@@ -78,11 +83,11 @@ public class CommentServiceImp implements CommentService {
 
     var currentComment = commentRepository.findById(commentId).orElseThrow(() -> {
       log.error("Comment not found . CommentId={}", commentId);
-      throw new ResponseStatusException(NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE);
+      return new ResponseStatusException(NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE);
     });
 
     if (currentComment.getAnonymousId() != anonymousId) {
-      log.warn("Permission denied for deleting comment. CommentId={}, ProvidedAnonymousId={}, ActualAnonymousId={}", commentId, anonymousId, currentComment.getAnonymousId());
+      log.warn("Permission denied for deleting comment");
       throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
@@ -95,11 +100,11 @@ public class CommentServiceImp implements CommentService {
    * Updates a comment's content or rating.
    *
    * @param dto the update request DTO
-   * @return HTTP response indicating the result of the update
+
    */
   @Override
   public void update(CommentUpdateDto dto) {
-    log.info("Attempting to update comment. CommentId={}, AnonymousId={}", dto.getCommentId(), dto.getAnonymousId());
+    log.info("Attempting to update comment");
 
     var currentComment = commentRepository.findById(dto.getCommentId()).orElseThrow(() -> {
       log.error("Comment not found. CommentId={}", dto.getCommentId());
@@ -107,20 +112,20 @@ public class CommentServiceImp implements CommentService {
     });
 
     if (currentComment.getAnonymousId() != dto.getAnonymousId()) {
-      log.warn("Permission denied for updating comment. CommentId={}, ProvidedAnonymousId={}, ActualAnonymousId={}", dto.getCommentId(), dto.getAnonymousId(), currentComment.getAnonymousId());
+      log.warn("Permission denied for updating comment");
       throw new ResponseStatusException(BAD_REQUEST);
     }
 
     boolean updated = false;
 
     if (dto.getComment() != null && !dto.getComment().equals(currentComment.getMessage())) {
-      log.info("Updating comment message. CommentId={}, NewMessage={}", dto.getCommentId(), dto.getComment());
+      log.info("Updating comment message");
       currentComment.setMessage(dto.getComment());
       updated = true;
     }
 
     if (dto.getReview() != currentComment.getRating()) {
-      log.info("Updating review rating. CommentId={}, OldRating={}, NewRating={}", dto.getCommentId(), currentComment.getRating(), dto.getReview());
+      log.info("Updating review rating");
       currentComment.setRating(dto.getReview());
       updated = true;
     }
@@ -216,7 +221,6 @@ public class CommentServiceImp implements CommentService {
    * Approves a user review and recalculates the seller’s average rating.
    *
    * @param commentId the ID of the comment to approve
-   * @return HTTP response indicating the result of the operation
    */
   @Override
   public void approveUserReview(int commentId) {

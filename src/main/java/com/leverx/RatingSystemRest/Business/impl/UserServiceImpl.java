@@ -7,12 +7,14 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.EMAIL_NOT_VERIFIED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.INVALID_TOKEN;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_DOES_NOT_MATCH;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_APPROVED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.USER_NOT_FOUND_WITH_EMAIL;
 import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -88,7 +90,7 @@ public class UserServiceImpl implements UserService {
   /**
    * Retrieves all pending seller registration requests.
    *
-   * @return a list of users pending approval as {@link AdminNotApprovedUserDto}, or empty  if none found.
+   * @return a list of users or empty  if none found.
    */
   public List<AdminNotApprovedUserDto> getSellersRegistrationRequests() {
     log.info("Fetching list of sellers who have not been approved yet.");
@@ -187,7 +189,6 @@ public class UserServiceImpl implements UserService {
    * Deletes a user by ID along with their profile picture folder.
    *
    * @param userId the ID of the user to delete
-   * @return a confirmation message or error if user not found
    */
   @Override
   @Transactional
@@ -211,29 +212,25 @@ public class UserServiceImpl implements UserService {
   }
 
 
-
   /**
    * Deletes a user's folder and its contents from the filesystem.
    *
    * @param folderUrl the path to the folder
-   * @return true if deleted successfully, false otherwise
    */
-  private boolean deleteUserFolderByUrl(String folderUrl) {
+  private void deleteUserFolderByUrl(String folderUrl) {
     try {
       var folderPath = Paths.get(folderUrl);
 
       if (!Files.exists(folderPath)) {
         log.warn("Folder does not exist: {}", folderUrl);
-        return false;
+        return;
       }
 
       deleteRecursively(folderPath);
       log.info("Folder and its contents deleted: {}", folderUrl);
-      return true;
 
     } catch (Exception e) {
       log.error("Failed to delete folder: {}. Error: {}", folderUrl, e.getMessage(), e);
-      return false;
     }
   }
 
@@ -281,13 +278,12 @@ public class UserServiceImpl implements UserService {
   }
 
 
-
   /**
    * Allows a user to change their password.
    *
    * @param currentUserId the ID of the user requesting the change
    * @param dto           the DTO containing old and new password
-   * @return string containint information
+   * @return string containing information
    */
   @Override
   public String changePassword(int currentUserId, ChangePasswordDto dto) {
@@ -300,7 +296,7 @@ public class UserServiceImpl implements UserService {
         });
 
     if (!dto.newPassword.equals(dto.repeatPassword)) {
-      log.warn("Password mismatch for user {}: new and repeat password do not match", currentUserId);
+      log.warn("new and repeat password do not match");
       return UserConstMessages.NEW_AND_REPEAT_PASSWORD_DOES_NOT_MATCH;
     }
 
@@ -383,13 +379,11 @@ public class UserServiceImpl implements UserService {
   }
 
 
-
   /**
    * Registers a new user with optional profile photo.
    *
    * @param dto   user registration data
    * @param photo the profile picture
-   * @return success message or error
    */
   @Override
   public void registerUser(RegisterUserDto dto, MultipartFile photo) {
@@ -508,7 +502,6 @@ public class UserServiceImpl implements UserService {
   }
 
 
-
   /**
    * Saves a profile picture to the local file system and returns a {@link UserPhoto} entity.
    *
@@ -570,7 +563,7 @@ public class UserServiceImpl implements UserService {
     var userOpt = userRepository.findByEmail(email);
     if (userOpt.isEmpty()) {
       log.error("User not found with email: {}", email);
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.USER_NOT_FOUND_WITH_EMAIL);
+      throw new ResponseStatusException(NOT_FOUND, USER_NOT_FOUND_WITH_EMAIL);
     }
 
     var user = userOpt.get();
@@ -578,7 +571,7 @@ public class UserServiceImpl implements UserService {
 
     if (user.getPasswordRecoveryToken() != null) {
       log.warn("Password recovery token already sent for user: {}", email);
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, UserConstMessages.PASSWORD_RECOVERY_TOKEN_ALREADY_SENT);
+      throw new ResponseStatusException(BAD_REQUEST, PASSWORD_RECOVERY_TOKEN_ALREADY_SENT);
     }
 
 
@@ -594,7 +587,7 @@ public class UserServiceImpl implements UserService {
 
 
     pwdRecoveryTokenRepository.save(recoveryToken);
-    log.info("Password recovery token saved for user {} with expiration at: {}", email, recoveryToken.getExpiresAt());
+    log.info("Password recovery token saved ");
 
 
     emailService.sendRecoverLink(user.getEmail(), generatedToken);
@@ -630,19 +623,18 @@ public class UserServiceImpl implements UserService {
           return new ResponseStatusException(NOT_FOUND, USER_NOT_FOUND);
         });
 
-     if (!dto.getNewpassword().equals(dto.getPassword())) {
+    if (!dto.getNewpassword().equals(dto.getPassword())) {
       log.error("Passwords do not match for user: {}", user.getEmail());
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, PASSWORD_DOES_NOT_MATCH);
     }
 
-     user.setPassword(passwordEncoder.encode(dto.getPassword()));
+    user.setPassword(passwordEncoder.encode(dto.getPassword()));
     userRepository.save(user);
     log.info("Password successfully updated for user: {}", user.getEmail());
 
-     pwdRecoveryTokenRepository.deleteById(savedToken.getId());
+    pwdRecoveryTokenRepository.deleteById(savedToken.getId());
     log.info("Password recovery token deleted for token: {}", dto.getToken());
   }
-
 
 
   /**
@@ -688,12 +680,12 @@ public class UserServiceImpl implements UserService {
    * @return the user ID or 0 if not found
    */
   public int retriaveLogedUserId(Authentication authentication) {
-    log.info("Attempting to retrieve user ID for logged-in user with email: {}", authentication.getName());
+    log.info("Attempting to retrieve user ID for logged-in ");
 
     if (authentication.getName() != null) {
       var user = userRepository.findByEmail(authentication.getName());
       if (user.isPresent()) {
-        log.info("User found for email: {}. User ID: {}", authentication.getName(), user.get().getId());
+        log.info("User found with User ID: {}", user.get().getId());
         return user.get().getId();
       } else {
         log.warn("No user found for email: {}", authentication.getName());
@@ -727,7 +719,6 @@ public class UserServiceImpl implements UserService {
           return new ResponseStatusException(HttpStatus.BAD_REQUEST, USER_NOT_FOUND);
         });
   }
-
 
 
   /**

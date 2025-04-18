@@ -26,7 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * REST controller that handles user authentication operations.
- * Provides endpoints for user registration, login, password recovery, email verification, and logout.
+
  */
 @RestController
 @RequestMapping("/api/auth")

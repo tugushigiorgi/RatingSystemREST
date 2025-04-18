@@ -35,7 +35,7 @@ public class UserController {
    * @param authentication The authentication object containing the user's credentials
    * @return ResponseEntity with the result message and appropriate HTTP status code:
    *         200 OK if password was changed successfully
-   *         400 Bad Request if passwords don't match, new password is same as old, or old password is incorrect
+   *         400 Bad Request if passwords don't match/new password is same as or old/ incorrect.
    *         500 Internal Server Error for unexpected errors
    */
   @PutMapping("/password")

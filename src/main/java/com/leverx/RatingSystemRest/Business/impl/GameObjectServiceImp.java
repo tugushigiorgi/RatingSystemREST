@@ -118,7 +118,7 @@ public class GameObjectServiceImp implements GameObjectService {
         });
 
     if (!Objects.equals(currentObject.getUser().getId(), getCurrentUser.getId())) {
-      log.warn("User with id {} is not authorized to delete game object with id {}", userId, gameObjectId);
+      log.warn("User with id {} is not authorized to delete game with id {}", userId, gameObjectId);
       throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
@@ -130,7 +130,7 @@ public class GameObjectServiceImp implements GameObjectService {
       log.info("Game object with id {} removed successfully by userId {}", gameObjectId, userId);
 
     } catch (IOException e) {
-      log.error("Error while deleting the file for game object with id {} by userId {}", gameObjectId, userId, e);
+      log.error("Error deleting the file for game with id {}by userId {}", gameObjectId, userId, e);
       throw new ResponseStatusException(INTERNAL_SERVER_ERROR, SOMETHING_WENT_WRONG);
     }
   }
@@ -161,7 +161,7 @@ public class GameObjectServiceImp implements GameObjectService {
         });
 
     if (!Objects.equals(currentObject.getUser().getId(), currentUser.getId())) {
-      log.warn("User with id {} is not authorized to update game object with id {}", userId, dto.getId());
+      log.warn("User with id {} is not authorized to update game with id {}", userId, dto.getId());
       throw new ResponseStatusException(BAD_REQUEST, PERMISSION_DENIED_MESSAGE);
     }
 
@@ -228,7 +228,7 @@ public class GameObjectServiceImp implements GameObjectService {
       return emptyList();
     }
 
-    log.info("Successfully retrieved {} game objects for seller with ID: {}", gameEntities.size(), sellerId);
+    log.info("retrieved {} game objects for seller with ID: {}", gameEntities.size(), sellerId);
     return gameEntities.stream()
         .map(GameObjectDto::toDto)
         .toList();
@@ -293,7 +293,7 @@ public class GameObjectServiceImp implements GameObjectService {
     try {
       var savedFile = new File(filePath);
       picture.transferTo(savedFile);
-      log.info("Successfully saved picture with file name: {}", modifiedFileName);
+      log.info("saved picture with file name: {}", modifiedFileName);
       return GameObjectPicture.builder()
           .url(publicUrl)
           .size(picture.getSize())
@@ -301,7 +301,7 @@ public class GameObjectServiceImp implements GameObjectService {
           .photoName(modifiedFileName)
           .build();
     } catch (IOException e) {
-      log.error("Failed to save picture for user with ID: {}. Error: {}", userId, e.getMessage());
+      log.error("Failed to save picture for user with ID:{}. Error: {}", userId, e.getMessage());
 
     }
 
@@ -317,6 +317,7 @@ public class GameObjectServiceImp implements GameObjectService {
    * @return the updated {@link GameObjectPicture} or null if update fails
    */
   private GameObjectPicture updatePictureOnLocalFolder(String currentFileUrl, int userId, MultipartFile file) {
+
     log.info("Updating picture for user with ID: {}. Current file URL: {}", userId, currentFileUrl);
 
     try {
