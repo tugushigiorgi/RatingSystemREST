@@ -1,7 +1,5 @@
 package com.leverx.RatingSystemRest.Business.impl;
 
-import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.ANONYMOUS_ALREADY_SUBMITTED_MESSAGE;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_ADDED_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_DELETED_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.COMMENT_NOT_FOUND_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.DELETED_SUCCESSFULLY_MESSAGE;
@@ -46,14 +44,15 @@ public class CommentServiceImp implements CommentService {
    * @return HTTP response containing success or failure message
    */
   @Override
-  public ResponseEntity<String> add(AddCommentDto dto) {
+  public void add(AddCommentDto dto) {
     var currentSeller = userRepository.findById(dto.sellerId)
         .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
+
     var hasMatchingAnonymousId = currentSeller.getComments().stream()
         .anyMatch(comment -> comment.getAnonymousId().equals(dto.getAnonymousId()));
 
     if (hasMatchingAnonymousId) {
-      return new ResponseEntity<>(ANONYMOUS_ALREADY_SUBMITTED_MESSAGE, BAD_REQUEST);
+      throw new ResponseStatusException(BAD_REQUEST);
     }
 
     var newComment = Comment.builder()
@@ -68,9 +67,8 @@ public class CommentServiceImp implements CommentService {
     currentSeller.getComments().add(newComment);
     commentRepository.save(newComment);
     userRepository.save(currentSeller);
-
-    return new ResponseEntity<>(COMMENT_ADDED_MESSAGE, OK);
   }
+
 
   /**
    * Deletes a comment by its ID if the anonymous ID matches the comment's author.
@@ -100,12 +98,12 @@ public class CommentServiceImp implements CommentService {
    * @return HTTP response indicating the result of the update
    */
   @Override
-  public ResponseEntity<String> update(CommentUpdateDto dto) {
+  public void update(CommentUpdateDto dto) {
     var currentComment = commentRepository.findById(dto.getCommentId())
         .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, COMMENT_NOT_FOUND_MESSAGE));
 
     if (currentComment.getAnonymousId() != dto.getAnonymousId()) {
-      return new ResponseEntity<>(PERMISSION_DENIED_MESSAGE, BAD_REQUEST);
+      throw new ResponseStatusException(BAD_REQUEST);
     }
 
     if (dto.getComment() != null && !dto.getComment().equals(currentComment.getMessage())) {
@@ -117,8 +115,8 @@ public class CommentServiceImp implements CommentService {
     }
 
     commentRepository.save(currentComment);
-    return new ResponseEntity<>(UPDATED_SUCCESSFULLY_MESSAGE, OK);
   }
+
 
   /**
    * Retrieves all approved reviews for a given seller.

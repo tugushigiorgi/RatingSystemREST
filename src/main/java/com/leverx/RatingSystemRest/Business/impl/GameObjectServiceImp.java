@@ -5,6 +5,7 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.FileConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.GAME_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.GameObjectMessages.SOMETHING_WENT_WRONG;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
+import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -201,10 +203,10 @@ public class GameObjectServiceImp implements GameObjectService {
    *
    * @param sellerRating the minimum rating of the seller
    * @param title        the title or partial title to filter by
-   * @return list of filtered game object DTOs or 204 if none match
+   * @return list of filtered game object DTOs or empty list
    */
   @Override
-  public ResponseEntity<List<GameObjectDto>> searchGameObjects(int sellerRating, String title) {
+  public List<GameObjectDto> searchGameObjects(int sellerRating, String title) {
     List<GameObject> data;
 
     if (title == null || title.isBlank()) {
@@ -214,12 +216,14 @@ public class GameObjectServiceImp implements GameObjectService {
     }
 
     if (CollectionUtils.isEmpty(data)) {
-      return new ResponseEntity<>(NO_CONTENT);
+      return emptyList();
     }
 
-    var dtoList = data.stream().map(GameObjectDto::toDto).toList();
-    return ResponseEntity.ok(dtoList);
+    return data.stream()
+        .map(GameObjectDto::toDto)
+        .collect(Collectors.toList());
   }
+
 
   /**
    * Saves a new picture to the local file system under a user-specific directory.

@@ -56,7 +56,7 @@ public interface GameObjectService {
    *
    * @param sellerRating the minimum average rating of the seller
    * @param title        the title of the GameObject to search for
-   * @return a response containing the list of matching GameObjects
+   * @return a GameObjects
    */
-  ResponseEntity<List<GameObjectDto>> searchGameObjects(int sellerRating, String title);
+  List<GameObjectDto> searchGameObjects(int sellerRating, String title);
 }

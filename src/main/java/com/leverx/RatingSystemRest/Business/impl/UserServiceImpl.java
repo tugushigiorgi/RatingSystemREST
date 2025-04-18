@@ -270,19 +270,21 @@ public class UserServiceImpl implements UserService {
   /**
    * Fetches a list of top-rated seller users.
    *
-   * @return list of {@link UserInfoDto} or NO_CONTENT if none
+   * @return list of {@link UserInfoDto} or empty
    */
-  public ResponseEntity<List<UserInfoDto>> getTopRatedSellers() {
+  @Override
+  public List<UserInfoDto> getTopRatedSellers() {
+    var sellers = userRepository.findTop5RatedSellers();
 
-    var getlist = userRepository.findTop5RatedSellers();
-
-    if (CollectionUtils.isEmpty(getlist)) {
-      return new ResponseEntity<>(NO_CONTENT);
+    if (CollectionUtils.isEmpty(sellers)) {
+      return emptyList();
     }
-    var toDtoList = getlist.stream().map(UserInfoDto::toDto).toList();
-    return new ResponseEntity<>(toDtoList, OK);
 
+    return sellers.stream()
+        .map(UserInfoDto::toDto)
+        .toList();
   }
+
 
   /**
    * Retrieves a seller's full profile by user ID, including game objects.
@@ -290,19 +292,28 @@ public class UserServiceImpl implements UserService {
    * @param userId the seller's user ID
    * @return {@link SellerProfileDto} or NO_CONTENT if no games
    */
-  public ResponseEntity<SellerProfileDto> getSellerProfileById(int userId) {
+  @Override
+  public SellerProfileDto getSellerProfileById(int userId) {
+    var currentSeller = userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND));
 
-    var currentSeller = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.SELLER_NOT_FOUND));
     var info = UserInfoDto.toDto(currentSeller);
     var gameList = currentSeller.getGameObjects();
+
     if (CollectionUtils.isEmpty(gameList)) {
-      return new ResponseEntity<>(NO_CONTENT);
+      throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No games found for this seller");
     }
-    var toDtoGameList = gameList.stream().map(GameObjectDto::toDto).toList();
 
-    return new ResponseEntity<>(SellerProfileDto.builder().userInfo(info).gameObjects(toDtoGameList).build(), OK);
+    var toDtoGameList = gameList.stream()
+        .map(GameObjectDto::toDto)
+        .toList();
 
+    return SellerProfileDto.builder()
+        .userInfo(info)
+        .gameObjects(toDtoGameList)
+        .build();
   }
+
 
 
   /**

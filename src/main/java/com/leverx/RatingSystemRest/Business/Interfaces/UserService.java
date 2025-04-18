@@ -82,15 +82,15 @@ public interface UserService {
    *
    * @return a response containing the list of top-rated sellers
    */
-  ResponseEntity<List<UserInfoDto>> getTopRatedSellers();
+  List<UserInfoDto> getTopRatedSellers();
 
   /**
    * Retrieves a seller's profile by user ID.
    *
    * @param userId the ID of the seller
-   * @return a response containing the seller's profile
+   * @return  SellerProfileDto
    */
-  ResponseEntity<SellerProfileDto> getSellerProfileById(int userId);
+  SellerProfileDto getSellerProfileById(int userId);
 
   /**
    * Registers a new user with profile photo.

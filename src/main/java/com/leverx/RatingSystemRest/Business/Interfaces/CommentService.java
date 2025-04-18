@@ -17,9 +17,9 @@ public interface CommentService {
      * Adds a new comment.
      *
      * @param dto the data transfer object containing comment data
-     * @return response indicating the result
+
      */
-    ResponseEntity<String> add(AddCommentDto dto);
+    void add(AddCommentDto dto);
 
     /**
      * Deletes a comment.
@@ -34,9 +34,9 @@ public interface CommentService {
      * Updates a comment.
      *
      * @param dto the data transfer object containing updated comment data
-     * @return response indicating the result
+
      */
-    ResponseEntity<String> update(CommentUpdateDto dto);
+    void update(CommentUpdateDto dto);
 
     /**
      * Gets approved reviews by seller ID.
