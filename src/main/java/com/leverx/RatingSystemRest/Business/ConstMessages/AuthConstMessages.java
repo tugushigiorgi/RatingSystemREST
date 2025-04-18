@@ -1,5 +1,8 @@
 package com.leverx.RatingSystemRest.Business.ConstMessages;
 
+/**
+ * Constants for Auth.
+ */
 public class AuthConstMessages {
 
   public static final String AUTHENTICATION_FAILED = "Authentication failed";
