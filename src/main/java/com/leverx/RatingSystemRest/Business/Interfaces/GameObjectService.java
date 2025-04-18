@@ -4,7 +4,6 @@ import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.GameObjectDto;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.UpdateGameObject;
 import com.leverx.RatingSystemRest.Presentation.Dto.GameDtos.addGameObjectDto;
 import java.util.List;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -49,7 +48,7 @@ public interface GameObjectService {
    * @return a response containing the list of GameObjects
    * @throws Exception if an error occurs while retrieving the data
    */
-  ResponseEntity<List<GameObjectDto>> getGameObjectsBySellerId(int sellerId) throws Exception;
+  List<GameObjectDto>  getGameObjectsBySellerId(int sellerId) throws Exception;
 
   /**
    * Searches for GameObjects based on seller rating and title.

@@ -13,68 +13,65 @@ import org.springframework.http.ResponseEntity;
 
 public interface CommentService {
 
-    /**
-     * Adds a new comment.
-     *
-     * @param dto the data transfer object containing comment data
+  /**
+   * Adds a new comment.
+   *
+   * @param dto the data transfer object containing comment data
+   */
+  void add(AddCommentDto dto);
 
-     */
-    void add(AddCommentDto dto);
+  /**
+   * Deletes a comment.
+   *
+   * @param anonymousId the ID of the anonymous user
+   * @param commentId   the ID of the comment
+   * @return response indicating the result
+   */
+  ResponseEntity<String> delete(int anonymousId, int commentId);
 
-    /**
-     * Deletes a comment.
-     *
-     * @param anonymousId the ID of the anonymous user
-     * @param commentId the ID of the comment
-     * @return response indicating the result
-     */
-    ResponseEntity<String> delete(int anonymousId, int commentId);
+  /**
+   * Updates a comment.
+   *
+   * @param dto the data transfer object containing updated comment data
+   */
+  void update(CommentUpdateDto dto);
 
-    /**
-     * Updates a comment.
-     *
-     * @param dto the data transfer object containing updated comment data
+  /**
+   * Gets approved reviews by seller ID.
+   *
+   * @param sellerId the ID of the seller
+   * @return list of approved user reviews
+   */
+  List<UserReviewsDto> getApprovedReviewsBySellerId(int sellerId);
 
-     */
-    void update(CommentUpdateDto dto);
+  /**
+   * Gets not approved reviews by seller ID.
+   *
+   * @param sellerId the ID of the seller
+   * @return list of not approved user reviews
+   * @throws Exception if something goes wrong during processing
+   */
+  List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception;
 
-    /**
-     * Gets approved reviews by seller ID.
-     *
-     * @param sellerId the ID of the seller
-     * @return list of approved user reviews
-     */
-    ResponseEntity<List<UserReviewsDto>> getApprovedReviewsBySellerId(int sellerId);
+  /**
+   * Gets all not approved reviews.
+   *
+   * @return list of not approved user reviews
+   */
+  List<UserReviewsDto> getAllNotApprovedReviews();
 
-    /**
-     * Gets not approved reviews by seller ID.
-     *
-     * @param sellerId the ID of the seller
-     * @return list of not approved user reviews
-     * @throws Exception if something goes wrong during processing
-     */
-    List<UserReviewsDto> getNotApprovedReviewsBySellerId(int sellerId) throws Exception;
+  /**
+   * Approves a user review.
+   *
+   * @param commentId the ID of the comment
+   */
+  void approveUserReview(int commentId);
 
-    /**
-     * Gets all not approved reviews.
-     *
-     * @return list of not approved user reviews
-     */
-    List<UserReviewsDto> getAllNotApprovedReviews();
-
-    /**
-     * Approves a user review.
-     *
-     * @param commentId the ID of the comment
-
-     */
-    void approveUserReview(int commentId);
-
-    /**
-     * Declines a user review.
-     *
-     * @param commentId the ID of the comment
-     * @return response indicating the result
-     */
-    ResponseEntity<String> declineUserReview(int commentId);
+  /**
+   * Declines a user review.
+   *
+   * @param commentId the ID of the comment
+   * @return response indicating the result
+   */
+  ResponseEntity<String> declineUserReview(int commentId);
 }

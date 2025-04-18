@@ -5,7 +5,6 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMes
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.DELETED_SUCCESSFULLY_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.PERMISSION_DENIED_MESSAGE;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.SELLER_NOT_FOUND_MESSAGE;
-import static com.leverx.RatingSystemRest.Business.ConstMessages.CommentConstMessages.UPDATED_SUCCESSFULLY_MESSAGE;
 import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -21,6 +20,7 @@ import com.leverx.RatingSystemRest.Presentation.Dto.CommentDtos.UserReviewsDto;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -122,21 +122,23 @@ public class CommentServiceImp implements CommentService {
    * Retrieves all approved reviews for a given seller.
    *
    * @param sellerId the ID of the seller
-   * @return a list of approved review DTOs or 204 if none are found
+   * @return a list of approved review DTOs
    */
   @Override
-  public ResponseEntity<List<UserReviewsDto>> getApprovedReviewsBySellerId(int sellerId) {
+  public List<UserReviewsDto> getApprovedReviewsBySellerId(int sellerId) {
     var seller = userRepository.findById(sellerId)
-        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND_MESSAGE));
 
     var reviews = commentRepository.sellersAllApprovedReviews(sellerId);
-    if (reviews.isEmpty()) {
-      return ResponseEntity.noContent().build();
-    }
 
-    var reviewDtos = reviews.stream().map(UserReviewsDto::toDto).toList();
-    return ResponseEntity.ok(reviewDtos);
+    if (CollectionUtils.isEmpty(reviews)) {
+      return emptyList();
+    }
+    return reviews.stream()
+        .map(UserReviewsDto::toDto)
+        .toList();
   }
+
 
   /**
    * Retrieves all unapproved reviews for a given seller.

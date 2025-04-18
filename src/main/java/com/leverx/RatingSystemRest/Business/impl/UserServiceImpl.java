@@ -14,6 +14,7 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessag
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_CHANGED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_DOES_NOT_MATCH;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.PASSWORD_IS_SAME;
+import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.SELLER_NOT_FOUND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_EXPIRED_NEW_TOKEN_SEND;
 import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages.TOKEN_NOT_FOUND;
@@ -23,7 +24,6 @@ import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessages;
@@ -118,7 +118,7 @@ public class UserServiceImpl implements UserService {
    */
   public void acceptSellerRegistrationRequest(int sellerId) {
     var currentSeller = userRepository.findById(sellerId)
-        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, UserConstMessages.SELLER_NOT_FOUND));
+        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
     if (!currentSeller.isHasVerifiedEmail()) {
       throw new ResponseStatusException(BAD_REQUEST, EMAIL_NOT_VERIFIED);
@@ -228,12 +228,14 @@ public class UserServiceImpl implements UserService {
    * Fetches public information for a user by ID.
    *
    * @param userId the ID of the user
-   * @return {@link UserInfoDto} or NOT_FOUND if user is missing
+   * @return {@link UserInfoDto} or throws exception
    */
-  public ResponseEntity<UserInfoDto> getUserInfoById(int userId) {
-    var getuser = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, UserConstMessages.SELLER_NOT_FOUND));
-    var toDto = UserInfoDto.toDto(getuser);
-    return new ResponseEntity<>(toDto, OK);
+  @Override
+  public UserInfoDto getUserInfoById(int userId) {
+    var user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND));
+
+    return UserInfoDto.toDto(user);
   }
 
 
@@ -295,13 +297,17 @@ public class UserServiceImpl implements UserService {
   @Override
   public SellerProfileDto getSellerProfileById(int userId) {
     var currentSeller = userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, SELLER_NOT_FOUND));
+        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, SELLER_NOT_FOUND));
 
     var info = UserInfoDto.toDto(currentSeller);
     var gameList = currentSeller.getGameObjects();
 
     if (CollectionUtils.isEmpty(gameList)) {
-      throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No games found for this seller");
+      return SellerProfileDto.builder()
+          .userInfo(info)
+          .gameObjects(emptyList())
+          .build();
+
     }
 
     var toDtoGameList = gameList.stream()
@@ -313,7 +319,6 @@ public class UserServiceImpl implements UserService {
         .gameObjects(toDtoGameList)
         .build();
   }
-
 
 
   /**

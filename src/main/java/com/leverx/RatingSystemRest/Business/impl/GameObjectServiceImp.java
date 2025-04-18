@@ -8,7 +8,6 @@ import static com.leverx.RatingSystemRest.Business.ConstMessages.UserConstMessag
 import static java.util.Collections.emptyList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 import com.leverx.RatingSystemRest.Business.Interfaces.GameObjectService;
 import com.leverx.RatingSystemRest.Infrastructure.Entities.GameObject;
@@ -31,7 +30,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -180,23 +178,24 @@ public class GameObjectServiceImp implements GameObjectService {
    * Retrieves all game objects for a specific seller.
    *
    * @param sellerId the ID of the seller
-   * @return list of game object DTOs or 204 if empty
-   * @throws Exception if the seller does not exist
+   * @return list of game object DTOs or empty
    */
   @Override
-  public ResponseEntity<List<GameObjectDto>> getGameObjectsBySellerId(int sellerId) throws Exception {
-    var getUser = userRepository.findById(sellerId)
+  public List<GameObjectDto> getGameObjectsBySellerId(int sellerId) {
+    var user = userRepository.findById(sellerId)
         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, SELLER_NOT_FOUND));
 
-    var getGames = gameObjectRepository.getGameObjectsBySellerId(sellerId);
+    var gameEntities = gameObjectRepository.getGameObjectsBySellerId(sellerId);
 
-    if (CollectionUtils.isEmpty(getGames)) {
-      return new ResponseEntity<>(NO_CONTENT);
+    if (CollectionUtils.isEmpty(gameEntities)) {
+      return emptyList();
     }
 
-    var toDto = getGames.stream().map(GameObjectDto::toDto).toList();
-    return ResponseEntity.ok(toDto);
+    return gameEntities.stream()
+        .map(GameObjectDto::toDto)
+        .toList();
   }
+
 
   /**
    * Searches game objects by title and/or seller rating.

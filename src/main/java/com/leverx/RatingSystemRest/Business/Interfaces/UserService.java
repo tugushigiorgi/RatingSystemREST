@@ -66,7 +66,7 @@ public interface UserService {
    * @param userId the ID of the user
    * @return a response containing the user's information
    */
-  ResponseEntity<UserInfoDto> getUserInfoById(int userId);
+  UserInfoDto getUserInfoById(int userId);
 
   /**
    * Changes the password for a user.
