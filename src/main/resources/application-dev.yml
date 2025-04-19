@@ -15,8 +15,9 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ""
-    password: ""
+    username: giorgi.tugushi.1@btu.edu.ge
+    password: zhzr sfqq krvv cxit
+
     properties:
       mail:
         smtp:
@@ -52,7 +53,7 @@ logging:
               BasicBinder: TRACE
 
 file:
-  upload-dir: wfwadaw
+  upload-dir: C:\Users\GiorgiTughushi\Desktop\WebDir
 
 frontend:
   path: http://localhost:3000/

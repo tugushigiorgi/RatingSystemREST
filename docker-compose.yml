@@ -33,6 +33,8 @@ services:
       - "8080:8080"
     environment:
       - "SPRING_PROFILES_ACTIVE=docker"
+    volumes:
+      - uploaded-images:/app/uploads
     networks:
       - app-network
 
@@ -42,4 +44,6 @@ networks:
 
 volumes:
   mysql-data:
+    driver: local
+  uploaded-images:
     driver: local
