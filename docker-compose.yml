@@ -15,6 +15,28 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  springboot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: springboot-container
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - "SPRING_PROFILES_ACTIVE=docker"
+    volumes:
+      - uploaded-images:/app/uploads
+    networks:
+      - app-network
 
 networks:
   app-network:
@@ -22,4 +44,6 @@ networks:
 
 volumes:
   mysql-data:
+    driver: local
+  uploaded-images:
     driver: local
